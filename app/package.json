@@ -1,7 +1,7 @@
 {
   "name": "cowork-live",
   "productName": "Cowork",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Живая панель совместной работы двух пользователей Claude Code",
   "author": "Cowork",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "createDesktopShortcut": true,
+      "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "shortcutName": "Cowork"
     },

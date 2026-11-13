@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, dialog, nativeImage } = require("electron");
+const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, dialog, nativeImage, clipboard } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -13,6 +13,8 @@ autoUpdater.autoInstallOnAppQuit = true;
 
 let win = null, tray = null, quitting = false;
 const ICON = path.join(__dirname, "build", "icon.png");
+const BUNDLED = path.join(__dirname, "web", "index.html");
+const SELF_REPO = "https://github.com/melloskiess-spec/cowork-releases.git";
 
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.on("second-instance", () => show());
@@ -25,13 +27,13 @@ function show() {
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1360, height: 900, minWidth: 380, minHeight: 600,
+    width: 1360, height: 900, minWidth: 900, minHeight: 600,
     backgroundColor: "#0d0c11", title: "Cowork", icon: ICON,
     autoHideMenuBar: true, show: false,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   win.removeMenu();
-  win.loadFile(path.join(__dirname, "web", "index.html"));
+  win.loadFile(BUNDLED);
   win.once("ready-to-show", () => win.show());
   // внешние ссылки открываем в браузере, а не внутри приложения
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: "deny" }; });
@@ -50,6 +52,7 @@ function buildTray() {
     { label: "Открыть Cowork", click: show },
     { label: "Настройки канала", click: () => { show(); win?.webContents.send("cowork:open-setup"); } },
     { label: "Проверить обновления", click: () => checkUpdates(true) },
+    { label: "Выйти из предпросмотра", click: () => { show(); win?.loadFile(BUNDLED); } },
     { type: "separator" },
     { label: `Версия ${app.getVersion()}`, enabled: false },
     { label: "Выйти", click: () => { quitting = true; app.quit(); } }
@@ -59,14 +62,15 @@ function buildTray() {
 
 let manualCheck = false;
 function checkUpdates(manual) {
-  if (!app.isPackaged) { if (manual) dialog.showMessageBox({ message: "Обновления проверяются только в установленной версии." }); return; }
-  manualCheck = !!manual;
+  if (!app.isPackaged) { sendStatus({ state: "dev" }); if (manual === true) dialog.showMessageBox({ message: "Обновления проверяются только в установленной версии." }); return; }
+  manualCheck = manual === true;
   autoUpdater.checkForUpdates().catch(err => log.warn("update check failed", err));
 }
 autoUpdater.on("checking-for-update", () => sendStatus({ state: "checking" }));
 autoUpdater.on("update-available", info => { sendStatus({ state: "downloading", version: info.version }); });
+let readyVersion = null;
 autoUpdater.on("update-not-available", () => {
-  sendStatus({ state: "latest" });
+  sendStatus({ state: "latest", version: app.getVersion() });
   if (manualCheck) dialog.showMessageBox({ message: `У вас последняя версия (${app.getVersion()}).` });
 });
 autoUpdater.on("download-progress", p => sendStatus({ state: "downloading", percent: Math.round(p.percent) }));
@@ -75,6 +79,7 @@ autoUpdater.on("error", err => {
   if (manualCheck) dialog.showMessageBox({ type: "warning", message: "Не удалось проверить обновления.", detail: String(err?.message || err) });
 });
 autoUpdater.on("update-downloaded", async info => {
+  readyVersion = info.version;
   sendStatus({ state: "ready", version: info.version });
   const { response } = await dialog.showMessageBox({
     type: "info", buttons: ["Перезапустить сейчас", "Позже"], defaultId: 0, cancelId: 1,
@@ -93,6 +98,10 @@ ipcMain.on("cowork:notify", (_e, { title, body }) => {
 });
 ipcMain.handle("cowork:version", () => app.getVersion());
 ipcMain.on("cowork:check-updates", () => checkUpdates(true));
+ipcMain.on("cowork:check-updates-inline", () => { if (readyVersion) return sendStatus({ state: "ready", version: readyVersion }); checkUpdates("inline"); });
+ipcMain.on("cowork:install-update", () => { if (!readyVersion) return; quitting = true; autoUpdater.quitAndInstall(); });
+ipcMain.on("cowork:copy", (_e, text) => clipboard.writeText(String(text).slice(0, 5000)));
+ipcMain.on("cowork:open-url", (_e, url) => { if (/^https:\/\/github\.com\//.test(String(url))) shell.openExternal(String(url)); });
 
 // ---------- Claude Code: запуск вашего локального claude в папке проекта ----------
 const runs = new Map();
@@ -127,18 +136,28 @@ ipcMain.handle("claude:check", () => new Promise(resolve => {
 ipcMain.handle("claude:pick-folder", async () => {
   const r = await dialog.showOpenDialog(win, { title: "Папка проекта", properties: ["openDirectory"] });
   if (r.canceled || !r.filePaths[0]) return null;
-  return { path: r.filePaths[0], env: readEnvFile(r.filePaths[0]) };
+  return { path: r.filePaths[0], env: readEnvFile(r.filePaths[0]), repo: githubRepo(r.filePaths[0]) };
 });
 ipcMain.handle("claude:folder-info", (_e, dir) => {
   try { if (!dir || !fs.statSync(dir).isDirectory()) return null; } catch { return null; }
-  return { path: dir, env: readEnvFile(dir) };
+  return { path: dir, env: readEnvFile(dir), repo: githubRepo(dir) };
 });
+// https-ссылка на репозиторий GitHub из .git/config папки проекта, если есть
+function githubRepo(dir) {
+  try {
+    const cfg = fs.readFileSync(path.join(dir, ".git", "config"), "utf8");
+    const m = cfg.match(/url\s*=\s*(?:https:\/\/(?:[^@\/]+@)?github\.com\/|git@github\.com:)([\w.-]+\/[\w.-]+?)(?:\.git)?\s*$/m);
+    return m ? "https://github.com/" + m[1] : "";
+  } catch { return ""; }
+}
 
-ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm }) => {
+ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self }) => {
   const send = msg => { if (!e.sender.isDestroyed()) e.sender.send("claude:event", { id, ...msg }); };
   if (!cwd || !fs.existsSync(cwd)) return send({ done: true, error: "Папка проекта не найдена. Выберите её в настройках." });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
     "--permission-mode", PERMS.has(perm) ? perm : "acceptEdits"];
+  // вкладка «Cowork»: Claude правит код самого приложения, ему можно git и npm, чтобы выпустить обновление
+  if (self) args.push("--allowedTools", ...["Bash(git:*)", "Bash(npm:*)", "Bash(node:*)"].map(a => isWin ? `"${a}"` : a));
   if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
   // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
   const env = { ...process.env, COWORK_ENABLED: "0" };
@@ -163,6 +182,26 @@ ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm }) => {
   p.on("close", code => { runs.delete(id); send({ done: true, code, stopped: p._stopped === true, error: code && !p._stopped ? errTail.trim() || `claude завершился с кодом ${code}` : "" }); });
   p.stdin.end(String(prompt || ""));
 });
+
+// ---------- вкладка «Cowork»: код приложения на этом компьютере ----------
+ipcMain.handle("self:clone", () => new Promise(resolve => {
+  const dest = path.join(app.getPath("documents"), "Cowork-source");
+  if (fs.existsSync(path.join(dest, ".git"))) return resolve({ path: dest, existed: true });
+  let err = "";
+  try {
+    const p = spawn("git", ["clone", SELF_REPO, isWin ? `"${dest}"` : dest], { shell: isWin, windowsHide: true });
+    p.stderr.on("data", d => { err = (err + d).slice(-800); });
+    p.on("error", e => resolve({ error: e.code === "ENOENT" ? "Не найден git. Установите Git for Windows и попробуйте снова." : String(e.message || e) }));
+    p.on("close", code => resolve(code === 0 ? { path: dest } : { error: err.trim() || `git clone завершился с кодом ${code}` }));
+  } catch (e) { resolve({ error: String(e.message || e) }); }
+}));
+ipcMain.handle("self:preview", (_e, dir) => {
+  const file = path.join(String(dir || ""), "dashboard", "index.html");
+  if (!fs.existsSync(file)) return { error: "В папке нет dashboard/index.html" };
+  win?.loadFile(file, { query: { preview: "1" } });
+  return { ok: true };
+});
+ipcMain.on("self:preview-off", () => win?.loadFile(BUNDLED));
 
 ipcMain.on("claude:stop", (_e, id) => {
   const p = runs.get(id); if (!p) return;

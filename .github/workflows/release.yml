@@ -1,12 +1,18 @@
 name: Release Windows app
 
+# Выпускает релиз, когда в main меняется версия в app/package.json.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths: ["app/**", "dashboard/**"]
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -14,12 +20,26 @@ jobs:
     defaults:
       run:
         working-directory: app
+        shell: bash
     steps:
       - uses: actions/checkout@v4
+      - name: Skip if this version is already released
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v$V already released, nothing to do"; echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-node@v4
+        if: steps.ver.outputs.skip != '1'
         with:
           node-version: 20
       - run: npm ci
+        if: steps.ver.outputs.skip != '1'
       - run: npm run release:win
+        if: steps.ver.outputs.skip != '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -70,7 +70,16 @@ button, input, textarea { font: inherit; color: inherit; }
 .p-now.none { color: var(--c6); }
 .pill { display: inline-flex; max-width: 100%; margin-top: 10px; padding: 3px 10px; border-radius: var(--r2); border: 1px solid var(--line-d); font: 500 12px/1.4 var(--mono); color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .empty-side { padding: 14px; border-radius: 18px; border: 1px dashed var(--line-d); color: var(--c6); font-size: 13.5px; }
-.side-foot { display: flex; align-items: center; gap: 10px; padding: 14px 16px 16px 22px; border-top: 1px solid var(--line-d); }
+.side-foot { display: grid; gap: 12px; padding: 14px 16px 16px; border-top: 1px solid var(--line-d); }
+.side-foot .conn { padding: 0 6px; }
+.invite { width: 100%; justify-content: center; }
+.upd { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--c8); border: 1px solid var(--line-d); font-size: 12.5px; color: var(--c5); }
+.upd span { flex: 1; min-width: 0; line-height: 1.3; } .upd b { display: block; color: var(--c2); font-weight: 600; font-size: 13px; }
+.upd button { flex: none; padding: 7px 12px; border: 0; border-radius: var(--r2); background: var(--c7); color: var(--c2); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background .25s; }
+.upd button:hover { background: var(--c3); } .upd button:disabled { opacity: .5; cursor: default; background: var(--c7); }
+.upd.ready { border-color: var(--c3); background: color-mix(in srgb, var(--c3) 18%, var(--c8)); } .upd.ready button { background: var(--c3); }
+.invite-text { width: 100%; min-height: 220px; padding: 14px 16px; border: 1.5px solid color-mix(in srgb, #fff 18%, transparent); border-radius: 16px; background: var(--c8); color: var(--c4); font: 14px/1.5 var(--f2); resize: vertical; outline: 0; user-select: text; }
+.steps-inv { margin: 0; padding-left: 20px; color: var(--c5); font-size: 14.5px; line-height: 1.5; } .steps-inv li { margin-bottom: 6px; } .steps-inv b { color: var(--c2); }
 .conn { flex: 1; min-width: 0; font-size: 12.5px; color: var(--c5); line-height: 1.3; }
 .conn b { display: block; color: var(--c2); font-weight: 600; font-size: 13px; }
 .ldot { display: inline-block; width: 8px; height: 8px; border-radius: var(--r2); background: var(--c6); margin-right: 7px; vertical-align: 1px; }
@@ -232,67 +241,137 @@ button, input, textarea { font: inherit; color: inherit; }
   .target button { padding: 6px 9px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- v0.4: projects, chats, presence ---------- */
+.ptabs { display: flex; gap: 6px; padding: 2px 14px 10px; overflow-x: auto; scrollbar-width: none; }
+.ptabs::-webkit-scrollbar { display: none; }
+.ptab { flex: none; max-width: 170px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border: 1.5px solid var(--line-d); border-radius: var(--r2); background: none; color: var(--c5); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .25s, color .25s, border-color .25s; }
+.ptab:hover { color: var(--c2); border-color: var(--c6); }
+.ptab[aria-current="true"] { background: var(--c2); border-color: var(--c2); color: var(--c1); }
+.ptab i { width: 7px; height: 7px; flex: none; border-radius: var(--r2); background: var(--c3); }
+.ptab span { overflow: hidden; text-overflow: ellipsis; }
+.ptab.add { width: 34px; justify-content: center; padding: 7px 0; font-size: 17px; line-height: 1; }
+.side-new { padding: 2px 12px 8px; }
+.side-new .btn { width: 100%; justify-content: center; }
+.nav.compact { padding-top: 2px; }
+.nav.compact button { padding: 8px 12px; font-size: 14px; }
+.side-head { display: flex; align-items: center; justify-content: space-between; margin: 14px 22px 8px; }
+.side-head .side-label { margin: 0; }
+.chats { flex: 1; min-height: 0; overflow-y: auto; padding: 0 12px 12px; display: grid; align-content: start; gap: 2px; }
+.chat { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border: 0; border-radius: 12px; background: none; color: var(--c5); text-align: left; cursor: pointer; transition: background .2s, color .2s; }
+.chat:hover { background: var(--c8); color: var(--c2); }
+.chat[aria-current="true"] { background: var(--c7); color: var(--c2); }
+.chat .av { width: 24px; height: 24px; font-size: 11px; }
+.chat .av i { width: 9px; height: 9px; border-width: 2px; right: -3px; bottom: -3px; border-color: var(--c1); }
+.chat[aria-current="true"] .av i { border-color: var(--c7); }
+.chat .ct { min-width: 0; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat .cm { font-size: 11.5px; color: var(--c6); white-space: nowrap; }
+.chat.busy .cm { color: var(--c3); font-weight: 700; }
+.chats .empty-side { margin-top: 2px; }
+.presence { display: flex; gap: 8px; }
+.pchip { display: flex; align-items: center; gap: 9px; max-width: 250px; padding: 5px 14px 5px 5px; border-radius: var(--r2); background: var(--c4); }
+.pchip .av { width: 30px; height: 30px; font-size: 13px; }
+.pchip .av i { border-color: var(--c4); width: 11px; height: 11px; }
+.pchip.is-ok .av i { background: var(--ok); } .pchip.is-wait .av i { background: var(--wait); }
+.pchip div { min-width: 0; line-height: 1.2; }
+.pchip b { display: block; font-size: 13px; }
+.pchip div > span { display: block; font-size: 11.5px; color: var(--c6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup .danger { margin-left: auto; padding: 0 6px; border: 0; background: none; color: var(--c5); font-size: 13px; text-decoration: underline; cursor: pointer; }
+.setup .danger:hover { color: var(--warn); }
+.setup { max-height: calc(100vh - 32px); overflow-y: auto; }
+.ptab.self { border-color: color-mix(in srgb, var(--c3) 55%, transparent); color: var(--c2); }
+.ptab.self[aria-current="true"] { background: var(--c3); border-color: var(--c3); color: #fff; }
+.ptab.self i { background: none; width: auto; height: auto; font-style: normal; color: var(--c3); }
+.ptab.self[aria-current="true"] i { color: #fff; }
+.top-actions { display: flex; gap: 8px; }
+.top-btn.primary { background: var(--c3); border-color: var(--c3); color: #fff; }
+.top-btn.primary:hover { background: var(--c1); border-color: var(--c1); }
+.preview-bar { position: fixed; z-index: 50; left: 50%; top: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: var(--r2); background: var(--c3); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 14px 40px -12px color-mix(in srgb, var(--c3) 80%, transparent); }
+.preview-bar button { padding: 6px 12px; border: 0; border-radius: var(--r2); background: #fff; color: var(--c1); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.turn.claude .av { background: var(--c1); color: #fff; font-size: 15px; }
+.turn.claude .reply { border-left: 0; padding-left: 0; margin-top: 2px; }
+.turn.claude .reply .who { display: none; }
+.turn.claude .reply.err .who { display: flex; }
+.turn.claude .reply.streaming { color: var(--c6); }
+.pending { margin-top: 6px; font-size: 12.5px; color: var(--c6); }
+.pending::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: var(--r2); background: var(--wait); vertical-align: 1px; animation: halo 1.8s infinite; }
+.top h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.owner-note { max-width: 860px; margin: 0 auto 10px; font-size: 12.5px; color: var(--c6); text-align: center; }
+@media (max-width: 760px) {
+  .ptabs, .side-new, .side-head, .chats { display: none; }
+  .presence { display: none; }
+}
 </style>
 </head>
 <body>
+<div class="preview-bar" data-preview-bar hidden>Предпросмотр вашей версии Cowork <button type="button" data-preview-off>Вернуть обычный вид</button></div>
 <div class="app">
   <aside class="side">
     <div class="brand">
       <div class="logo">Cowork<span class="dot"></span></div>
-      <button class="icon-btn" type="button" data-open-setup title="Настройки канала" aria-label="Настройки канала"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+      <button class="icon-btn" type="button" data-open-setup title="Настройки проекта" aria-label="Настройки проекта"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
     </div>
-    <nav class="nav" aria-label="Разделы">
-      <button type="button" data-view="feed" aria-current="page"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>Лента<span class="count" data-count-feed></span></button>
+    <div class="ptabs" role="tablist" aria-label="Проекты" data-ptabs></div>
+    <div class="side-new"><button class="btn" type="button" data-new-chat>Новый чат</button></div>
+    <nav class="nav compact" aria-label="Разделы">
+      <button type="button" data-view="feed"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Все события<span class="count" data-count-feed></span></button>
       <button type="button" data-view="tasks"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>Задания<span class="count" data-count-tasks></span></button>
       <button type="button" data-view="files"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>Файлы<span class="count" data-count-files></span></button>
       <button type="button" data-view="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>Как работать</button>
     </nav>
-    <div class="side-label">Сейчас</div>
-    <div class="people" data-people><div class="empty-side">Пока никого. Запустите Claude Code в репозитории проекта.</div></div>
+    <div class="side-head"><div class="side-label">Чаты</div></div>
+    <div class="chats" data-chats></div>
     <div class="side-foot">
+      <button class="btn btn--ghost invite" type="button" data-invite>Пригласить напарника</button>
+      <div class="upd" data-upd hidden><span data-upd-text><b>Cowork</b>обновления</span><button type="button" data-upd-btn>Проверить</button></div>
       <div class="conn"><b><span class="ldot" data-ldot></span><span data-conn>Не подключено</span></b><span data-conn-sub>Нажмите на шестерёнку</span></div>
     </div>
   </aside>
 
   <main class="main">
     <header class="top">
-      <div class="grow"><h1 data-title>Лента<span class="dot"></span></h1><div class="sub" data-subtitle>Задания вашим Claude и шаги, которые они сделали</div></div>
-      <div class="stats" data-stats></div>
-      <button class="top-btn" type="button" data-new-chat hidden title="Начать новый разговор с Claude"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Новый чат</span></button>
+      <div class="grow"><h1 data-title>Чат<span class="dot"></span></h1><div class="sub" data-subtitle></div></div>
+      <div class="top-actions" data-self-actions hidden>
+        <button class="top-btn" type="button" data-preview title="Открыть приложение из вашей копии кода, с последними правками">Предпросмотр</button>
+        <button class="top-btn primary" type="button" data-release title="Claude поднимет версию, закоммитит и запушит, GitHub выпустит обновление">Выпустить обновление</button>
+      </div>
+      <div class="presence" data-presence></div>
       <div class="live" data-live><span class="ldot"></span><span data-live-text>офлайн</span></div>
     </header>
 
     <section class="view" data-panel="feed" aria-label="Лента">
       <div class="wrap" data-feed></div>
-      <div class="hello" data-hello><div><h2>Hello<span class="dot"></span></h2><p>Здесь появится работа вас обоих: задания, которые вы даёте Claude, правки файлов, коммиты и ваши сообщения друг другу.</p></div></div>
+      <div class="hello" data-hello><div><h2 data-hello-title>Hello<span class="dot"></span></h2><p data-hello-text></p></div></div>
     </section>
     <section class="view" data-panel="tasks" hidden aria-label="Задания"><div class="wrap"><div class="grid" data-tasks></div></div></section>
     <section class="view" data-panel="files" hidden aria-label="Файлы"><div class="wrap"><div data-alert></div><div class="rows" data-files></div></div></section>
     <section class="view" data-panel="help" hidden aria-label="Как работать">
       <div class="wrap">
-        <h2 class="h2">Четыре команды<span class="dot"></span></h2>
+        <h2 class="h2">Как это устроено<span class="dot"></span></h2>
         <div class="cmds">
-          <div class="cmd"><code>/sync</code><p>В начале сессии. Claude подтянет изменения и расскажет, что сделал напарник и что свободно.</p></div>
-          <div class="cmd"><code>/take</code><p>Взять задачу из TASKS.md. Она отмечается за вами, создаётся ветка.</p></div>
-          <div class="cmd"><code>/live</code><p>Открыть эту панель в браузере, если приложение не под рукой.</p></div>
-          <div class="cmd"><code>/handoff</code><p>В конце сессии. Claude запишет, что сделано и что дальше, и предложит pull request.</p></div>
+          <div class="cmd"><code>Проекты</code><p>Вкладки слева сверху. У каждого проекта своя папка на компьютере и свой канал с напарником. «+» добавляет проект.</p></div>
+          <div class="cmd"><code>Чаты</code><p>Внутри проекта. Каждый чат — отдельный разговор с вашим Claude Code со своей памятью. Чаты напарника тоже видны, но вести их может только он.</p></div>
+          <div class="cmd"><code>✦ Cowork</code><p>Особая вкладка: чат, в котором Claude меняет само приложение. «Предпросмотр» показывает правки сразу, «Выпустить обновление» отправляет их вам обоим.</p></div>
+          <div class="cmd"><code>Напарнику</code><p>Переключатель в поле ввода. Сообщение увидит только напарник, Claude его не читает.</p></div>
+          <div class="cmd"><code>/sync</code><p>Если работаете в терминале: в начале сессии Claude подтянет изменения и расскажет, что сделал напарник.</p></div>
         </div>
         <h2 class="h2">Вопросы<span class="dot"></span></h2>
         <div class="faq">
-          <details open><summary>Как работает чат с Claude?</summary><p>Выберите в поле ввода «Claude» и напишите задание. Приложение запускает Claude Code на вашем компьютере в папке проекта, на вашей подписке. Ответы и шаги появляются в ленте, напарник видит их у себя. Разговор продолжается, пока вы не нажмёте «Новый чат». Что Claude может делать без вопросов, настраивается в шестерёнке: по умолчанию он меняет файлы, но не запускает команды.</p></details>
-          <details><summary>Что видит напарник?</summary><p>Имя, текст задания для Claude (до 240 символов), пути изменённых файлов, ветку, заголовки коммитов, push и pull request'ы. Содержимое файлов не передаётся. Скрыть тексты заданий: COWORK_SHARE_PROMPTS=0 в .claude/cowork.env.</p></details>
-          <details><summary>Где хранятся события?</summary><p>На бесплатном сервере ntfy.sh, до 12 часов. Имя канала длинное и случайное, оно работает как пароль. Для полной закрытости можно поднять свой ntfy и указать его в настройках.</p></details>
-          <details><summary>Видит ли Claude наши сообщения?</summary><p>Нет. Сообщения идут только в ленту. Claude узнаёт о работе напарника через /sync и журнал HANDOFF.md.</p></details>
-          <details><summary>Как выключить трансляцию на время?</summary><p>Создайте .claude/cowork.local.env со строкой COWORK_ENABLED=0. Напарника это не затронет.</p></details>
-          <details><summary>Как обновляется приложение?</summary><p>Само: проверяет новые версии при запуске и каждые 30 минут, скачивает в фоне и предлагает перезапуститься. Проверить вручную можно из меню в трее.</p></details>
+          <details open><summary>Как подключить напарника?</summary><p>Нажмите «Пригласить напарника» внизу слева. Там два шага: дать доступ к репозиторию на GitHub и отправить готовый текст с ссылкой на Cowork и каналом проекта.</p></details>
+          <details><summary>Как работает чат с Claude?</summary><p>Приложение запускает Claude Code на вашем компьютере в папке проекта, на вашей подписке. Ответы и шаги появляются в чате, напарник видит их у себя. Что Claude может делать без вопросов, настраивается в шестерёнке: по умолчанию он меняет файлы, но не запускает команды.</p></details>
+          <details><summary>Как устроен общий чат?</summary><p>Чат живёт на компьютере того, кто его создал: там работает Claude Code, на его подписке и в его папке проекта. Второй человек пишет в тот же чат, сообщение приходит на компьютер создателя и Claude отвечает обоим, как будто вы сидите за одним компьютером. Каждое сообщение подписано именем. Если компьютер создателя выключен, сообщение подождёт, пока там откроют Cowork.</p></details>
+          <details><summary>Что видит напарник?</summary><p>Всё, что в чате: сообщения, ответы Claude, какие файлы он читал и менял, команды, коммиты. Содержимое файлов не передаётся.</p></details>
+          <details><summary>Где хранятся чаты?</summary><p>На вашем компьютере, внутри приложения. Через сервер ntfy события только проходят и хранятся там до 12 часов. Имя канала длинное и случайное, оно работает как пароль.</p></details>
+          <details><summary>Как обновляется приложение?</summary><p>Само: проверяет новые версии при запуске и каждые 30 минут, скачивает в фоне. Внизу слева видно состояние, кнопка «Обновить» перезапускает приложение уже новой версией.</p></details>
         </div>
       </div>
     </section>
 
     <div class="composer" data-composer>
+      <div class="owner-note" data-owner-note hidden></div>
       <form data-say>
         <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
-        <textarea rows="1" name="message" placeholder="Написать напарнику…" aria-label="Сообщение"></textarea>
+        <textarea rows="1" name="message" placeholder="Задание для Claude…" aria-label="Сообщение"></textarea>
         <button class="send" type="submit" disabled aria-label="Отправить"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
       </form>
       <div class="hint" data-hint></div>
@@ -302,31 +381,66 @@ button, input, textarea { font: inherit; color: inherit; }
 
 <dialog class="setup" data-setup aria-labelledby="setup-title">
   <form method="dialog" data-setup-form>
-    <h2 id="setup-title">Hi<span class="dot"></span></h2>
-    <p class="lead">Подключитесь к каналу проекта. Проще всего выбрать папку проекта ниже: канал подставится из .claude/cowork.env сам.</p>
+    <h2 id="setup-title" data-setup-title>Hi<span class="dot"></span></h2>
+    <p class="lead" data-setup-lead>Выберите папку проекта: канал с напарником подставится из .claude/cowork.env сам.</p>
     <label>Ваше имя, так вас увидит напарник<input name="me" autocomplete="name" required></label>
+    <div data-cc-setup hidden style="display:grid;gap:16px">
+      <div class="folder"><label>Папка проекта, где работает Claude Code<input name="folder" readonly placeholder="Не выбрана"></label><button class="btn btn--ghost mini" type="button" data-pick-folder>Выбрать</button></div>
+    </div>
+    <label>Название проекта<input name="pname" autocomplete="off" placeholder="Например, Сайт"></label>
     <label>Канал, COWORK_TOPIC<input name="topic" autocomplete="off" required></label>
     <div class="two">
       <label>Сервер<input name="server" autocomplete="off" value="https://ntfy.sh"></label>
       <label>Токен, если сервер свой<input name="token" type="password" autocomplete="off"></label>
     </div>
-    <div data-cc-setup hidden style="display:grid;gap:16px">
-      <div class="sep"></div>
-      <div class="folder"><label>Папка проекта, где запускать Claude Code<input name="folder" readonly placeholder="Не выбрана"></label><button class="btn btn--ghost mini" type="button" data-pick-folder>Выбрать</button></div>
+    <div data-cc-setup2 hidden style="display:grid;gap:16px">
       <label>Что Claude может делать без вопросов<select name="perm"><option value="acceptEdits">Менять файлы (рекомендуется)</option><option value="bypassPermissions">Всё, включая команды</option><option value="plan">Ничего, только план</option></select></label>
       <div class="cc-state" data-cc-state>Проверяю Claude Code…</div>
     </div>
     <div class="actions">
-      <button class="btn" type="submit" value="ok">Подключиться</button>
-      <button class="btn btn--ghost" type="button" data-setup-close>Позже</button>
+      <button class="btn" type="submit" value="ok" data-setup-ok>Сохранить</button>
+      <button class="btn btn--ghost" type="button" data-setup-close>Отмена</button>
+      <button class="danger" type="button" data-setup-delete hidden>Удалить проект</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="setup" data-self-dialog aria-labelledby="self-title">
+  <form method="dialog">
+    <h2 id="self-title" style="font-size:56px">Cowork<span class="dot"></span></h2>
+    <p class="lead">Здесь Claude меняет само приложение: внешний вид, кнопки, поведение. Вы оба видите этот чат. Когда правки готовы, кнопка «Выпустить обновление» отправляет их на GitHub, и через несколько минут Cowork обновится у вас обоих.</p>
+    <ol class="steps-inv">
+      <li><b>Нужен Git</b> на компьютере (git-scm.com) и доступ на запись к репозиторию cowork-releases. Хозяйка репозитория добавляет напарника в Settings → Collaborators.</li>
+      <li><b>Код скачается</b> в папку Документы\Cowork-source.</li>
+    </ol>
+    <div class="cc-state" data-self-state></div>
+    <div class="actions">
+      <button class="btn" type="button" data-self-clone>Скачать код</button>
+      <button class="btn btn--ghost" type="submit">Отмена</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="setup" data-invite-dialog aria-labelledby="invite-title">
+  <form method="dialog">
+    <h2 id="invite-title" style="font-size:64px">Вдвоём<span class="dot"></span></h2>
+    <ol class="steps-inv">
+      <li><b>Дайте доступ к репозиторию</b> на GitHub: Settings → Collaborators → Add people. <a href="#" data-open-access style="color:var(--c3)" hidden>Открыть</a></li>
+      <li><b>Отправьте напарнику текст ниже</b>, лучше в личные сообщения: в нём канал, он работает как пароль.</li>
+    </ol>
+    <textarea class="invite-text" data-invite-text readonly></textarea>
+    <div class="actions">
+      <button class="btn" type="button" data-invite-copy>Скопировать</button>
+      <button class="btn btn--ghost" type="submit">Закрыть</button>
     </div>
   </form>
 </dialog>
 
 <script>
 (() => {
-  const WORK_MIN = 15, OFF_MIN = 45, FILE_WINDOW_MIN = 120, MAX_EVENTS = 500, TURN_GAP_MIN = 30;
+  const WORK_MIN = 15, OFF_MIN = 45, FILE_WINDOW_MIN = 120, KEEP_EVENTS = 1500, TURN_GAP_MIN = 30;
   const COLORS = ["#6c3cff", "#ff6b4a", "#12a87a", "#e09a00", "#3b82f6", "#d946b8"];
+  const RELEASES = "https://github.com/melloskiess-spec/cowork-releases/releases/latest";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const ICON = {
@@ -342,87 +456,167 @@ button, input, textarea { font: inherit; color: inherit; }
   };
   const SEND_ICON = '<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>', STOP_ICON = '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
   const VIEWS = {
-    feed: ["Лента", "Задания вашим Claude и шаги, которые они сделали"],
+    feed: ["Все события", "Всё, что происходит в проекте: чаты обоих, правки и сообщения"],
     tasks: ["Задания", "Всё, что вы поручали Claude за последние 12 часов"],
     files: ["Файлы", "Что меняли за последние два часа и где можно столкнуться"],
-    help: ["Как работать", "Команды Claude Code и ответы на частые вопросы"]
+    help: ["Как работать", "Проекты, чаты и ответы на частые вопросы"]
   };
 
-  const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+  // ---------- storage ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (err) { console.warn("[cowork] storage", err); } },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+    json(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+  };
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  let me = store.get("cw.me") || "";
+  let projects = store.json("cw.projects", null);
+  if (!Array.isArray(projects)) {
+    // migrate the single-channel setup from 0.3 and earlier
+    projects = [];
+    const topic = store.get("cw.topic");
+    if (topic) {
+      const folder = store.get("cw.folder") || "";
+      projects.push({ id: newId(), name: folder.split(/[\\/]/).filter(Boolean).pop() || "Проект", folder, topic, server: store.get("cw.server") || "https://ntfy.sh", token: store.get("cw.token") || "", perm: store.get("cw.perm") || "acceptEdits" });
+    }
+  }
   const hash = new URLSearchParams(location.hash.slice(1));
-  let cfg = {
-    server: (hash.get("server") || store.get("cw.server") || "https://ntfy.sh").replace(/\/+$/, ""),
-    topic: hash.get("topic") || store.get("cw.topic") || "",
-    token: hash.get("token") || store.get("cw.token") || "",
-    me: hash.get("name") || store.get("cw.me") || "",
-    folder: store.get("cw.folder") || "",
-    perm: store.get("cw.perm") || "acceptEdits"
-  };
-  const save = () => { for (const k of ["server", "topic", "token", "me", "folder", "perm"]) store.set("cw." + k, cfg[k]); };
-  let sessions = {}; try { sessions = JSON.parse(store.get("cw.sessions") || "{}") || {}; } catch {}
-  const saveSessions = () => store.set("cw.sessions", JSON.stringify(sessions));
-  if (hash.get("topic")) { save(); history.replaceState(null, "", location.pathname + location.search); }
+  if (hash.get("topic")) {
+    let p = projects.find(x => x.topic === hash.get("topic"));
+    if (!p) { p = { id: newId(), name: hash.get("project") || "Проект", folder: "", topic: hash.get("topic"), server: (hash.get("server") || "https://ntfy.sh").replace(/\/+$/, ""), token: hash.get("token") || "", perm: "acceptEdits" }; projects.push(p); }
+    if (hash.get("name")) me = hash.get("name");
+    store.set("cw.active", p.id);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  const saveProjects = () => { store.set("cw.projects", JSON.stringify(projects)); store.set("cw.me", me); };
+  saveProjects();
+  let proj = projects.find(p => p.id === store.get("cw.active")) || projects[0] || null;
+  let myChats = [];   // [{id, title, sid, t}]
+  const loadChats = () => { myChats = proj ? store.json("cw.chats." + proj.id, []) : []; };
+  const saveChats = () => { if (proj) store.set("cw.chats." + proj.id, JSON.stringify(myChats)); };
 
+  // ---------- helpers ----------
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const cut = (s, n) => { s = String(s || "").trim(); return s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s; };
   const hhmm = t => new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const dayOf = t => new Date(t).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  const short = t => Date.now() - t < 86400e3 && new Date(t).getDate() === new Date().getDate() ? hhmm(t) : new Date(t).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
   const colorOf = n => { let h = 0; for (const c of n) h = (h * 31 + c.codePointAt(0)) >>> 0; return COLORS[h % COLORS.length]; };
   const initial = n => (n.trim()[0] || "?").toUpperCase();
   const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return n + " " + (m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c); };
   const ago = t => { const s = Math.max(0, (Date.now() - t) / 1000); return s < 45 ? "только что" : s < 3600 ? Math.round(s / 60) + " мин назад" : s < 86400 ? Math.round(s / 3600) + " ч назад" : dayOf(t); };
-  const av = (name, cls = "") => `<span class="av" style="background:${colorOf(name)}">${esc(initial(name))}${cls !== null ? "<i></i>" : ""}</span>`;
+  const av = (name, dot = true) => `<span class="av" style="background:${colorOf(name)}">${esc(initial(name))}${dot ? "<i></i>" : ""}</span>`;
+  const whose = n => n === me ? "Ваш" : n;
 
   // ---------- state ----------
-  const people = new Map(), seen = new Set(), shown = new Set(), seenCid = new Set(), fullText = new Map();
-  let running = null, target = "partner", ccOk = false, shareCommands = false;
-  let events = [], seq = 0, es = null, conn = "off", view = "feed";
+  const people = new Map(), seen = new Set(), seenCid = new Set(), shown = new Set(), runs = new Map(), remoteLive = new Map(), queues = new Map(), queuedAsks = new Set();
+  const HUMAN = new Set(["prompt", "ask", "note"]), HIDDEN = new Set(["take", "live", "stop"]);
+  let events = [], seq = 0, es = null, conn = "off", view = "chat", chatId = null, target = store.get("cw.target") || "claude", ccOk = false, shareCommands = false, repoUrl = "";
 
+  const chatOf = e => e.chat || (e.session ? "s-" + e.user + "-" + e.session : null);
   function ingest(raw, id, timeSec) {
     if (id && seen.has(id)) return false;
-    let e; try { e = JSON.parse(raw); } catch { return false; }
+    let e; if (typeof raw === "string") { try { e = JSON.parse(raw); } catch { return false; } } else e = raw;
+    if (e && Array.isArray(e.batch)) {
+      if (id) seen.add(id);
+      let any = false;
+      for (const x of e.batch) { const r = ingest(x, null, timeSec); if (r) any = r; }
+      return any;
+    }
     if (!e || typeof e.user !== "string" || !e.user || !e.event) return false;
-    if (id) seen.add(id);
+    // transient signals: streaming text and stop requests are not stored
+    if (e.event === "live") { if (e.user !== me && e.run) { remoteLive.set(e.run, { chat: e.chat, text: String(e.text || ""), t: Date.now() }); return e; } return false; }
+    if (e.event === "stop") { if (e.user !== me && (!timeSec || Date.now() / 1000 - timeSec < 120)) { const r = [...runs.values()].find(x => x.id === e.run); if (r) native?.claude?.stop(r.id); } return false; }
+    if ((e.event === "reply" || e.event === "idle") && e.run) remoteLive.delete(e.run);
     if (e.cid) { if (seenCid.has(e.cid)) return false; seenCid.add(e.cid); }
+    if (id) { seen.add(id); e._id = id; }
     e.seq = ++seq;
     e.t = e.ts ? Date.parse(e.ts) : (timeSec ? timeSec * 1000 : Date.now());
     if (isNaN(e.t)) e.t = Date.now();
     events.push(e);
-    if (e.event === "note" || e.local) return e;
+    persistSoon();
+    if (e.event === "note" || e.event === "take" || e.local) return e;
     let p = people.get(e.user);
     if (!p) { p = { last: 0, ended: false, idle: false, now: "", branch: "", files: new Map() }; people.set(e.user, p); }
     if (e.t >= p.last) {
       p.last = e.t; p.ended = e.event === "end"; p.idle = e.event === "idle";
       if (e.branch) p.branch = e.branch;
-      if (e.event === "prompt") p.now = e.text;
+      if (e.event === "prompt" || e.event === "ask") p.now = e.text;
       if (e.event === "start") p.now = "";
     }
     if (e.event === "edit" && e.file) p.files.set(e.file, Math.max(p.files.get(e.file) || 0, e.t));
     return e;
+  }
+  let persistTimer = 0;
+  function persistSoon() {
+    if (persistTimer || !proj) return;
+    const pid = proj.id;
+    persistTimer = setTimeout(() => {
+      persistTimer = 0;
+      if (!proj || proj.id !== pid) return;
+      const keep = events.slice(-KEEP_EVENTS).map(({ seq, t, ...rest }) => rest);
+      store.set("cw.events." + pid, JSON.stringify(keep));
+    }, 800);
   }
   const stateOf = p => { const min = (Date.now() - p.last) / 60000; return p.ended || min > OFF_MIN ? ["off", "не в сети"] : p.idle || min > WORK_MIN ? ["wait", "ждёт · " + ago(p.last)] : ["ok", "работает с Claude"]; };
 
   function buildTurns(list) {
     const turns = [], open = new Map();
     for (const e of list) {
+      if (HIDDEN.has(e.event)) continue;
       if (e.event === "note") { turns.push({ key: "n" + e.seq, user: e.user, t: e.t, head: e, steps: [] }); continue; }
-      let cur = open.get(e.user);
+      const isHead = e.event === "prompt" || e.event === "ask";
+      const k = (isHead || !e.run ? e.user : "run") + "|" + (chatOf(e) || "");
+      let cur = isHead ? null : open.get(k) || open.get(e.user + "|" + (chatOf(e) || ""));
       const stale = cur && (e.t - cur.lastT) / 60000 > TURN_GAP_MIN;
-      if (e.event === "prompt" && cur && !stale && !cur.head && cur.steps.every(x => x.event === "start")) { cur.head = e; cur.steps = []; cur.t = e.t; cur.lastT = e.t; }
-      else if (e.event === "prompt" || e.event === "start" || !cur || stale) {
-        cur = { key: "t" + e.seq, user: e.user, t: e.t, head: e.event === "prompt" ? e : null, steps: e.event === "prompt" ? [] : [e], lastT: e.t };
-        turns.push(cur); open.set(e.user, cur);
+      if (isHead && (cur = open.get(e.user + "|" + (chatOf(e) || ""))) && !stale && !cur.head && cur.steps.every(x => x.event === "start")) { cur.head = e; cur.steps = []; cur.t = e.t; cur.lastT = e.t; open.set("run|" + (chatOf(e) || ""), cur); }
+      else if (isHead || e.event === "start" || !cur || stale) {
+        cur = { key: "t" + e.seq, user: e.user, t: e.t, head: isHead ? e : null, steps: isHead ? [] : [e], lastT: e.t };
+        turns.push(cur); open.set(e.user + "|" + (chatOf(e) || ""), cur);
+        if (isHead && chatOf(e)) open.set("run|" + chatOf(e), cur);
       } else {
         const prev = cur.steps.at(-1);
         if (!(e.event === "edit" && prev && prev.event === "edit" && prev.file === e.file)) cur.steps.push(e);
         cur.lastT = e.t;
       }
-      if (e.event === "end") open.delete(e.user);
+      if (e.event === "end") open.delete(e.user + "|" + (chatOf(e) || ""));
     }
     return turns;
   }
 
-  // light markdown for Claude replies: code fences, inline code, bold, lists, headings
+  // the run currently working in a chat: local (this computer) or remote (partner's computer)
+  function activeRun(chat) {
+    const local = runs.get(chat); if (local) return { id: local.id, user: me, local: true, live: local.live };
+    let res = null;
+    for (const e of events) {
+      if (chatOf(e) !== chat || !e.run) continue;
+      if (e.event === "prompt" && e.user !== me || e.event === "take") res = { id: e.run, user: e.user, t: e.t };
+      else if (res && e.run === res.id) { if (e.event === "idle") res = null; else res.t = e.t; }
+    }
+    if (!res || Date.now() - res.t > 10 * 60e3) return null;
+    if (res.user === me) return null;   // left over from before a restart
+    res.live = remoteLive.get(res.id)?.text || "";
+    return res;
+  }
+
+  // all chats of the project: mine (local list) + any chat seen in events
+  function chatList() {
+    const map = new Map();
+    for (const c of myChats) map.set(c.id, { id: c.id, user: me, title: c.title, t: c.t, last: c.t, mine: true });
+    for (const e of events) {
+      const id = chatOf(e); if (!id) continue;
+      let c = map.get(id);
+      if (!c) { c = { id, user: e.user, title: "", t: e.t, last: e.t, mine: false }; map.set(id, c); }
+      if ((e.event === "prompt" || e.event === "ask") && (!c.title || c.title === "Новый чат")) c.title = cut(e.chatTitle || e.text, 60);
+      c.last = Math.max(c.last, e.t);
+    }
+    for (const c of map.values()) if (!c.title) c.title = c.mine ? "Новый чат" : "Сессия в терминале";
+    return [...map.values()].sort((a, b) => b.last - a.last);
+  }
+  const currentChat = () => chatId ? chatList().find(c => c.id === chatId) || null : null;
+
+  // light markdown for Claude replies
   function md(src) {
     const out = [], lines = String(src || "").replace(/\r/g, "").split("\n");
     let list = null, para = [];
@@ -448,48 +642,48 @@ button, input, textarea { font: inherit; color: inherit; }
   function renderStatus() {
     const ok = conn === "ok";
     $("[data-ldot]").className = "ldot " + (ok ? "ok" : conn === "wait" ? "wait" : "");
-    $("[data-conn]").textContent = ok ? "В эфире" : conn === "wait" ? "Подключаюсь…" : "Не подключено";
-    $("[data-conn-sub]").textContent = cfg.topic ? `${cfg.me || "без имени"} · #${cut(cfg.topic.replace(/^cowork-/, ""), 8)}` : "Нажмите на шестерёнку";
+    $("[data-conn]").textContent = !proj ? "Нет проекта" : ok ? "В эфире" : conn === "wait" ? "Подключаюсь…" : "Не подключено";
+    $("[data-conn-sub]").textContent = proj ? `${me || "без имени"} · ${proj.name}` : "Нажмите на шестерёнку";
     $("[data-live]").className = "live" + (ok ? " ok" : "");
     $("[data-live-text]").textContent = ok ? "в эфире" : conn === "wait" ? "подключаюсь" : "офлайн";
   }
 
-  function render() {
-    events.sort((a, b) => a.t - b.t || a.seq - b.seq);
-    if (events.length > MAX_EVENTS) events = events.slice(-MAX_EVENTS);
-    const plist = [...people.entries()].sort((a, b) => b[1].last - a[1].last);
-    const turns = buildTurns(events);
-    const recent = events.filter(e => e.t > Date.now() - 12 * 3600e3);
-    const n = ev => recent.filter(e => e.event === ev).length;
+  function renderSide(chats) {
+    const selfP = projects.find(p => p.kind === "self");
+    $("[data-ptabs]").innerHTML = projects.filter(p => p.kind !== "self").map(p => `<button class="ptab" role="tab" type="button" data-proj="${esc(p.id)}" aria-current="${p.id === proj?.id}" title="${esc(p.folder || p.name)}"><i style="background:${colorOf(p.name)}"></i><span>${esc(p.name)}</span></button>`).join("")
+      + (native?.self ? `<button class="ptab self" type="button" data-self-tab aria-current="${!!selfP && selfP.id === proj?.id}" title="Менять само приложение вместе с Claude"><i>✦</i><span>Cowork</span></button>` : "")
+      + '<button class="ptab add" type="button" data-proj-add title="Добавить проект" aria-label="Добавить проект">+</button>';
+    $("[data-self-actions]").hidden = proj?.kind !== "self";
+    $("[data-chats]").innerHTML = chats.length ? chats.map(c => {
+      const p = people.get(c.user), st = c.mine ? (runs.has(c.id) ? "ok" : "off") : p ? stateOf(p)[0] : "off";
+      const busy = runs.has(c.id);
+      return `<button class="chat ${busy ? "busy" : ""} is-${st}" type="button" data-chat="${esc(c.id)}" aria-current="${view === "chat" && c.id === chatId}" title="${esc(c.title)}">${av(c.user)}<span class="ct">${esc(c.title)}</span><span class="cm">${busy ? "работает" : short(c.last)}</span></button>`;
+    }).join("") : '<div class="empty-side">Чатов пока нет. Нажмите «Новый чат» и дайте Claude задание.</div>';
+    $$("[data-view]").forEach(b => b.dataset.view === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  }
 
-    // sidebar people
-    $("[data-people]").innerHTML = plist.length ? plist.map(([name, p]) => {
-      const [cls, label] = stateOf(p);
-      return `<div class="person is-${cls}"><div class="p-head">${av(name)}<div><div class="p-name">${esc(name)}${name === cfg.me ? ' <span style="color:var(--c6);font-weight:500">· вы</span>' : ""}</div><div class="p-state">${label}</div></div></div>
-        <div class="p-now ${p.now ? "" : "none"}">${p.now ? esc(p.now) : "Задание пока не дано"}</div>${p.branch ? `<span class="pill">⎇ ${esc(p.branch)}</span>` : ""}</div>`;
-    }).join("") : '<div class="empty-side">Пока никого. Запустите Claude Code в репозитории проекта.</div>';
-
-    // stats
-    $("[data-stats]").innerHTML = `<span class="stat"><b>${n("prompt")}</b>заданий</span><span class="stat"><b>${n("edit")}</b>правок</span><span class="stat"><b>${n("commit")}</b>коммитов</span>`;
-
-    // feed
-    const feed = $("[data-feed]");
-    $("[data-hello]").hidden = turns.length > 0;
+  function renderFeed(list, emptyTitle, emptyText) {
+    const turns = buildTurns(list);
+    const hello = $("[data-hello]");
+    hello.hidden = turns.length > 0;
+    $("[data-hello-title]").innerHTML = esc(emptyTitle) + '<span class="dot"></span>';
+    $("[data-hello-text]").textContent = emptyText;
     const view$ = $('[data-panel="feed"]');
-    const atBottom = view$.scrollHeight - view$.scrollTop - view$.clientHeight < 140;
+    const atBottom = view$.scrollHeight - view$.scrollTop - view$.clientHeight < 160;
     let lastDay = "";
-    feed.innerHTML = turns.slice(-60).map((tr, i, arr) => {
+    $("[data-feed]").innerHTML = turns.slice(-80).map((tr, i, arr) => {
       const d = dayOf(tr.t), sep = d !== lastDay ? `<div class="day"><span>${d}</span></div>` : ""; lastDay = d;
-      const p = people.get(tr.user), last = tr.steps.at(-1);
+      const p = people.get(tr.user), last = tr.steps.at(-1), ch = tr.head ? chatOf(tr.head) : null;
+      const run = tr.head?.run ? [...runs.values()].find(r => r.id === tr.head.run) : null;
       const latest = !arr.slice(i + 1).some(x => x.user === tr.user && x.head?.event !== "note");
-      const isRun = running && tr.head?.run === running.id;
-      const typing = isRun || (tr.head?.event !== "note" && p && latest && !(tr.user === cfg.me && native?.claude && !running && tr.head?.run) && stateOf(p)[0] === "ok" && !(last && ["idle", "end"].includes(last.event)));
+      const appRun = tr.user === me && native?.claude && tr.head?.run;
+      const typing = !!run || (!appRun && tr.head?.event !== "note" && p && latest && stateOf(p)[0] === "ok" && !(last && ["idle", "end"].includes(last.event)));
       const fresh = !shown.has(tr.key); shown.add(tr.key);
       const isNote = tr.head?.event === "note";
-      const head = tr.head ? `<div class="bubble ${isNote ? "note" : ""}"><span class="tag">${isNote ? "сообщение" : "задание для Claude"}</span>${esc(tr.head.text)}</div>` : "";
+      const head = tr.head ? `<div class="bubble ${isNote ? "note" : ""}"><span class="tag">${isNote ? "сообщение" : "для Claude"}</span>${esc(tr.head.full || tr.head.text)}</div>` : "";
       let steps = "", open = false;
       for (const s of tr.steps) {
-        if (s.event === "reply") { if (open) { steps += "</ul>"; open = false; } steps += replyHtml(fullText.get(s.cid) || s.text, s.err ? "err" : ""); continue; }
+        if (s.event === "reply") { if (open) { steps += "</ul>"; open = false; } steps += replyHtml(s.full || s.text, s.err ? "err" : ""); continue; }
         const cls = (s.event === "idle" ? "done" : ["commit", "push", "pr"].includes(s.event) ? "key" : "") + (s.local ? " local" : "");
         const body = s.event === "edit" ? `<span class="t" style="flex:none">Изменил(а)</span><code>${esc(s.file || s.text)}</code>`
           : s.event === "bash" ? `<code>${esc(s.text)}</code>`
@@ -499,22 +693,101 @@ button, input, textarea { font: inherit; color: inherit; }
         steps += `<li class="${cls}">${ICON[s.event] || ICON.bash}${body}</li>`;
       }
       if (open) steps += "</ul>";
-      if (isRun && running.live.trim()) steps += replyHtml(running.live, "streaming");
-      return `${sep}<article class="turn ${fresh ? "fresh" : ""} ${tr.user === cfg.me ? "mine" : ""}">${av(tr.user, null)}<div style="min-width:0">
-        <div class="t-who"><span class="t-name">${esc(tr.user)}</span><span class="t-time">${hhmm(tr.t)}</span></div>
+      if (run && run.live.trim()) steps += replyHtml(run.live, "streaming");
+      const chatLink = view === "feed" && ch ? ` · <a href="#" data-goto-chat="${esc(ch)}" style="color:var(--c3)">открыть чат</a>` : "";
+      return `${sep}<article class="turn ${fresh ? "fresh" : ""} ${tr.user === me ? "mine" : ""}">${av(tr.user, false)}<div style="min-width:0">
+        <div class="t-who"><span class="t-name">${esc(tr.user)}</span><span class="t-time">${hhmm(tr.t)}${chatLink}</span></div>
         ${head}${steps}${typing ? '<span class="typing" aria-label="Claude работает"><i></i><i></i><i></i></span>' : ""}</div></article>`;
     }).join("");
     if (atBottom) requestAnimationFrame(() => { view$.scrollTop = view$.scrollHeight; });
-    $("[data-count-feed]").textContent = turns.length || "";
+  }
 
+  // a chat reads like one conversation: people's messages, then Claude's answer with its steps
+  function renderChat(list, c, emptyTitle, emptyText) {
+    const run = c ? activeRun(c.id) : null;
+    const items = list.filter(e => !HIDDEN.has(e.event));
+    $("[data-hello]").hidden = items.length > 0 || !!run;
+    $("[data-hello-title]").innerHTML = esc(emptyTitle) + '<span class="dot"></span>';
+    $("[data-hello-text]").textContent = emptyText;
+    const view$ = $('[data-panel="feed"]');
+    const atBottom = view$.scrollHeight - view$.scrollTop - view$.clientHeight < 160;
+    const taken = new Set(list.filter(e => e.event === "take").map(e => e.ask));
+    const out = []; let lastDay = "", group = null;
+    const flushGroup = () => {
+      if (!group) return;
+      let body = "", open = false;
+      for (const s of group.items) {
+        if (s.event === "reply") { if (open) { body += "</ul>"; open = false; } body += replyHtml(s.full || s.text, s.err ? "err" : ""); continue; }
+        const cls = (s.event === "idle" ? "done" : ["commit", "push", "pr"].includes(s.event) ? "key" : "") + (s.local ? " local" : "");
+        const txt = s.event === "edit" ? `<span class="t" style="flex:none">Изменил</span><code>${esc(s.file || s.text)}</code>`
+          : s.event === "bash" ? `<code>${esc(s.text)}</code>`
+          : s.event === "tool" ? `<span class="t" style="flex:none">${esc(s.label || "")}</span>${s.text ? `<code>${esc(s.text)}</code>` : ""}`
+          : `<span class="t">${esc(s.event === "idle" ? s.text : s.text)}</span>`;
+        if (!open) { body += '<ul class="steps">'; open = true; }
+        body += `<li class="${cls}">${ICON[s.event] || ICON.bash}${txt}</li>`;
+      }
+      if (open) body += "</ul>";
+      if (group.live) body += (group.live.trim() ? replyHtml(group.live, "streaming") : "") + '<span class="typing" aria-label="Claude работает"><i></i><i></i><i></i></span>';
+      const fresh = !shown.has(group.key); shown.add(group.key);
+      out.push(`<article class="turn claude ${fresh ? "fresh" : ""}"><span class="av">✦</span><div style="min-width:0"><div class="t-who"><span class="t-name">Claude</span><span class="t-time">${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</span></div>${body}</div></article>`);
+      group = null;
+    };
+    for (const e of items) {
+      const d = dayOf(e.t); if (d !== lastDay) { flushGroup(); out.push(`<div class="day"><span>${d}</span></div>`); lastDay = d; }
+      if (HUMAN.has(e.event)) {
+        flushGroup();
+        const isNote = e.event === "note", key = "h" + (e.cid || e.seq);
+        const fresh = !shown.has(key); shown.add(key);
+        const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди, Claude закончит текущее и возьмётся" : "ждёт компьютер " + esc(e.to || c?.user || "") + ": там должен быть открыт Cowork"}</div>` : "";
+        out.push(`<article class="turn ${fresh ? "fresh" : ""} ${e.user === me ? "mine" : ""}">${av(e.user, false)}<div style="min-width:0"><div class="t-who"><span class="t-name">${esc(e.user)}</span><span class="t-time">${hhmm(e.t)}</span></div><div class="bubble ${isNote ? "note" : ""}"><span class="tag">${isNote ? "сообщение, Claude не видит" : "для Claude"}</span>${esc(e.full || e.text)}</div>${waiting}</div></article>`);
+        continue;
+      }
+      if (e.event === "start" || e.event === "end") continue;
+      if (!group) group = { key: "c" + e.seq, t: e.t, items: [], host: e.user !== (c?.user || e.user) || (c && !c.mine) ? e.user : "" };
+      const prev = group.items.at(-1);
+      if (!(e.event === "edit" && prev && prev.event === "edit" && prev.file === e.file)) group.items.push(e);
+    }
+    if (run) { if (!group) group = { key: "c-live-" + run.id, t: Date.now(), items: [], host: run.user !== me ? run.user : "" }; group.live = run.live || " "; }
+    flushGroup();
+    $("[data-feed]").innerHTML = out.join("");
+    if (atBottom) requestAnimationFrame(() => { view$.scrollTop = view$.scrollHeight; });
+  }
+
+  function render() {
+    events.sort((a, b) => a.t - b.t || a.seq - b.seq);
+    if (events.length > KEEP_EVENTS * 1.2) events = events.slice(-KEEP_EVENTS);
+    const chats = chatList();
+    if (view === "chat" && chatId && !chats.some(c => c.id === chatId)) chatId = null;
+    renderSide(chats);
+
+    // presence in the header
+    const plist = [...people.entries()].sort((a, b) => (a[0] === me) - (b[0] === me) || b[1].last - a[1].last).slice(0, 3);
+    $("[data-presence]").innerHTML = plist.map(([name, p]) => { const [cls, label] = stateOf(p); return `<div class="pchip is-${cls}" title="${esc(p.now || "")}">${av(name)}<div><b>${esc(name)}${name === me ? " · вы" : ""}</b><span>${esc(label)}</span></div></div>`; }).join("");
+
+    // title
+    const c = currentChat();
+    if (view === "chat") {
+      $("[data-title]").innerHTML = esc(c ? cut(c.title, 60) : "Новый чат") + '<span class="dot"></span>';
+      $("[data-subtitle]").textContent = c && !c.mine ? `Общий чат · Claude работает на компьютере ${c.user}` : `Общий чат · Claude работает на вашем компьютере, в папке ${proj?.folder ? proj.folder.split(/[\\/]/).filter(Boolean).pop() : "проекта"}`;
+      const list = c ? events.filter(e => chatOf(e) === c.id) : [];
+      renderChat(list, c, c && !c.mine ? "Пусто" : "Hi", c && !c.mine ? "В этом чате пока ничего нет. Напишите Claude, ответ придёт с компьютера " + c.user + "." : "Напишите задание внизу. Напарник видит этот чат и может писать Claude сюда же, как будто вы сидите за одним компьютером.");
+    } else {
+      $("[data-title]").innerHTML = VIEWS[view][0] + '<span class="dot"></span>';
+      $("[data-subtitle]").textContent = VIEWS[view][1];
+      if (view === "feed") renderFeed(events, "Hello", "Здесь появится работа вас обоих: чаты с Claude, правки файлов, коммиты и ваши сообщения друг другу.");
+    }
+
+    const turnsAll = buildTurns(events);
+    $("[data-count-feed]").textContent = "";
     // tasks
-    const tasks = turns.filter(tr => tr.head && tr.head.event === "prompt" && tr.t > Date.now() - 12 * 3600e3).reverse();
+    const tasks = turnsAll.filter(tr => tr.head && (tr.head.event === "prompt" || tr.head.event === "ask") && tr.t > Date.now() - 12 * 3600e3).reverse();
     $("[data-count-tasks]").textContent = tasks.length || "";
     $("[data-tasks]").innerHTML = tasks.length ? tasks.map(tr => {
-      const p = people.get(tr.user), mine = turns.filter(x => x.user === tr.user && x.head?.event === "prompt").at(-1) === tr;
-      const st = p && mine ? stateOf(p)[1].split(" · ")[0] : "готово";
+      const p = people.get(tr.user), latest = turnsAll.filter(x => x.user === tr.user && x.head?.event === "prompt").at(-1) === tr;
+      const st = p && latest ? stateOf(p)[1].split(" · ")[0] : "готово";
       const files = new Set(tr.steps.filter(s => s.event === "edit").map(s => s.file)).size, commits = tr.steps.filter(s => s.event === "commit").length;
-      return `<article class="task" style="--tc:${colorOf(tr.user)}"><span class="badge">${esc(tr.user)} · ${esc(st)}</span><h3>${esc(tr.head.text)}</h3>
+      const ch = chatOf(tr.head);
+      return `<article class="task" style="--tc:${colorOf(tr.user)};${ch ? "cursor:pointer" : ""}" ${ch ? `data-goto-chat="${esc(ch)}"` : ""}><span class="badge">${esc(tr.user)} · ${esc(st)}</span><h3>${esc(tr.head.text)}</h3>
         <p>${[plural(files, "файл", "файла", "файлов"), commits ? plural(commits, "коммит", "коммита", "коммитов") : "", ago(tr.t)].filter(Boolean).join(" · ")}</p></article>`;
     }).join("") : '<div class="hello" style="grid-column:1/-1"><div><h2>Пусто<span class="dot"></span></h2><p>Как только кто-то из вас даст Claude задание, оно появится здесь.</p></div></div>';
 
@@ -532,205 +805,434 @@ button, input, textarea { font: inherit; color: inherit; }
       : '<div class="hello"><div><h2>Тихо<span class="dot"></span></h2><p>За последние два часа файлы не менялись.</p></div></div>';
 
     renderStatus();
+    renderComposer();
+    processAsks();
   }
 
-  // ---------- views ----------
-  function show(v) {
+  // ---------- navigation ----------
+  function show(v, id) {
     view = v;
-    $$("[data-view]").forEach(b => b.dataset.view === v ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
-    $$("[data-panel]").forEach(p => { const on = p.dataset.panel === v; p.hidden = !on; if (on) { p.classList.remove("enter"); void p.offsetWidth; p.classList.add("enter"); } });
-    $("[data-title]").innerHTML = `${VIEWS[v][0]}<span class="dot"></span>`;
-    $("[data-subtitle]").textContent = VIEWS[v][1];
-    $("[data-composer]").hidden = v !== "feed";
-    if (v === "feed") { const f = $('[data-panel="feed"]'); f.scrollTop = f.scrollHeight; }
+    if (v === "chat") chatId = id ?? chatId;
+    const panel = v === "chat" ? "feed" : v;
+    $$("[data-panel]").forEach(p => { const on = p.dataset.panel === panel; const was = !p.hidden; p.hidden = !on; if (on && !was) { p.classList.remove("enter"); void p.offsetWidth; p.classList.add("enter"); } });
+    $("[data-composer]").hidden = !(v === "chat" || v === "feed");
+    shownReset();
+    render();
+    if (panel === "feed") { const f = $('[data-panel="feed"]'); requestAnimationFrame(() => { f.scrollTop = f.scrollHeight; }); }
   }
+  function shownReset() { buildTurns(events).forEach(tr => shown.add(tr.key)); }
   $$("[data-view]").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
+  document.addEventListener("click", ev => {
+    const pt = ev.target.closest("[data-proj]"); if (pt) { switchProject(pt.dataset.proj); return; }
+    if (ev.target.closest("[data-proj-add]")) { openSetup(true); return; }
+    if (ev.target.closest("[data-self-tab]")) { openSelf(); return; }
+    const ch = ev.target.closest("[data-chat]"); if (ch) { show("chat", ch.dataset.chat); $("[data-say] textarea").focus(); return; }
+    const go = ev.target.closest("[data-goto-chat]"); if (go) { ev.preventDefault(); show("chat", go.dataset.gotoChat); }
+  });
+  function newChat() {
+    if (!proj) { openSetup(true); return; }
+    const empty = myChats.find(c => c.title === "Новый чат" && !events.some(e => e.chat === c.id));
+    const c = empty || { id: newId(), title: "Новый чат", sid: "", t: Date.now() };
+    if (!empty) { myChats.unshift(c); saveChats(); }
+    target = canClaude() ? "claude" : target;
+    show("chat", c.id);
+    $("[data-say] textarea").focus();
+  }
+  $("[data-new-chat]").addEventListener("click", newChat);
 
   // ---------- network ----------
-  const base = () => cfg.server + "/" + encodeURIComponent(cfg.topic);
-  const authQ = () => cfg.token ? "&auth=" + encodeURIComponent(btoa("Bearer " + cfg.token).replace(/=+$/, "")) : "";
+  const base = () => proj.server + "/" + encodeURIComponent(proj.topic);
+  const authQ = () => proj.token ? "&auth=" + encodeURIComponent(btoa("Bearer " + proj.token).replace(/=+$/, "")) : "";
   async function connect() {
     if (es) { es.close(); es = null; }
-    people.clear(); seen.clear(); seenCid.clear(); events = []; conn = "wait"; renderStatus();
+    people.clear(); seen.clear(); seenCid.clear(); shown.clear(); events = []; conn = proj ? "wait" : "off";
+    loadChats();
+    if (!proj) { render(); return; }
+    const pid = proj.id;
+    for (const e of store.json("cw.events." + pid, [])) ingest(e, e._id);
+    shownReset(); render();
     try {
       const r = await fetch(base() + "/json?poll=1&since=12h" + authQ());
       if (!r.ok) throw new Error(r.status);
+      if (proj?.id !== pid) return;
       for (const line of (await r.text()).split("\n")) { if (!line.trim()) continue; try { const m = JSON.parse(line); if (m.event === "message") ingest(m.message, m.id, m.time); } catch {} }
     } catch (err) { console.warn("[cowork] history", err); }
-    buildTurns(events).forEach(tr => shown.add(tr.key));
-    render();
+    if (proj?.id !== pid) return;
+    shownReset(); render();
     const f = $('[data-panel="feed"]'); f.scrollTop = f.scrollHeight;
-    es = new EventSource(base() + "/sse?since=1m" + authQ());
-    es.onopen = () => { conn = "ok"; render(); };
-    es.onerror = () => { conn = "wait"; renderStatus(); };
-    es.onmessage = ev => { try { const m = JSON.parse(ev.data); const e = m.event === "message" && ingest(m.message, m.id, m.time); if (e) { render(); notify(e); } } catch {} };
+    const src = new EventSource(base() + "/sse?since=1m" + authQ()); es = src;
+    src.onopen = () => { if (es === src) { conn = "ok"; render(); } };
+    src.onerror = () => { if (es === src) { conn = "wait"; renderStatus(); } };
+    src.onmessage = ev => { if (es !== src) return; try { const m = JSON.parse(ev.data); const e = m.event === "message" && ingest(m.message, m.id, m.time); if (e) { render(); notify(e); } } catch {} };
   }
-  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  // publish: show the event immediately and send it to the channel; the echo is dropped by cid
-  async function publish(fields, { local = false } = {}) {
-    const e = { v: 1, user: cfg.me, cid: newId(), ts: new Date().toISOString(), ...fields };
-    if (local) e.local = true;
-    const added = ingest(JSON.stringify(e)); if (added) render();
-    if (local || !cfg.topic) return e;
-    const headers = { "Content-Type": "application/json" };
-    if (cfg.token) headers.Authorization = "Bearer " + cfg.token;
-    const r = await fetch(base(), { method: "POST", headers, body: JSON.stringify(e) });
-    if (!r.ok) throw new Error(r.status);
-    return e;
+  function switchProject(id) {
+    const p = projects.find(x => x.id === id); if (!p || p.id === proj?.id) return;
+    proj = p; store.set("cw.active", p.id); chatId = null;
+    connect().then(() => { loadFolder(); const mine = chatList().find(c => c.mine); show(mine ? "chat" : "feed", mine?.id); });
+    render();
   }
-  const sendNote = text => publish({ event: "note", text: text.slice(0, 1000) });
+  // publish: show the event immediately, then send it in a batch; the echo is dropped by cid.
+  // Batching keeps us well under the ntfy.sh rate limit while Claude streams many small steps.
+  const outbox = []; let flushTimer = 0, flushDue = 0, flushing = false;
+  function publish(fields, { local = false, full } = {}) {
+    if (!proj) return Promise.resolve(null);
+    const e = { v: 1, user: me, cid: newId(), ts: new Date().toISOString(), ...fields };
+    const shownE = { ...e }; if (local) shownE.local = true; if (full) shownE.full = full;
+    if (ingest(shownE)) render();
+    if (!local) { outbox.push(e); scheduleFlush(["prompt", "ask", "note", "stop", "take", "idle"].includes(e.event) ? 250 : 1500); }
+    return Promise.resolve(e);
+  }
+  function scheduleFlush(delay) {
+    const due = Date.now() + delay;
+    if (flushTimer && flushDue <= due) return;
+    clearTimeout(flushTimer); flushDue = due;
+    flushTimer = setTimeout(flush, delay);
+  }
+  const bytes = s => new TextEncoder().encode(s).length;
+  async function flush() {
+    flushTimer = 0;
+    if (!proj || flushing) { if (flushing) scheduleFlush(500); return; }
+    flushing = true;
+    const pid = proj.id, url = base(), headers = { "Content-Type": "application/json" };
+    if (proj.token) headers.Authorization = "Bearer " + proj.token;
+    for (const r of runs.values()) if (r.pid === pid && r.live !== r.sentLive) {
+      r.sentLive = r.live;
+      outbox.push({ v: 1, user: me, event: "live", chat: r.chat, run: r.id, text: r.live.length > 1200 ? "…" + r.live.slice(-1199) : r.live });
+    }
+    const items = outbox.splice(0), chunks = []; let cur = [], size = 0;
+    for (const it of items) { const n = bytes(JSON.stringify(it)); if (cur.length && size + n > 3500) { chunks.push(cur); cur = []; size = 0; } cur.push(it); size += n; }
+    if (cur.length) chunks.push(cur);
+    for (let i = 0; i < chunks.length; i++) {
+      const ch = chunks[i];
+      try {
+        const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(ch.length === 1 ? ch[0] : { v: 1, user: me, batch: ch }) });
+        if (!r.ok) throw new Error(r.status);
+      } catch (err) {
+        console.warn("[cowork] publish", err);
+        if (proj?.id === pid) outbox.unshift(...chunks.slice(i).flat().filter(x => x.event !== "live"));
+        flash("Канал недоступен, повторю через несколько секунд.");
+        flushing = false; scheduleFlush(5000); return;
+      }
+    }
+    flushing = false;
+    if (outbox.length) scheduleFlush(1500);
+  }
 
   // ---------- desktop bridge (Electron), no-op in a browser ----------
   const native = window.coworkNative;
-  const NOTIFY = { prompt: "дал(а) Claude задание", commit: "сделал(а) коммит", push: "запушил(а) ветку", pr: "открыл(а) pull request", note: "пишет вам" };
-  function notify(e) { if (native && !e.local && NOTIFY[e.event] && e.user !== cfg.me && Date.now() - e.t < 120000) native.notify(`${e.user} ${NOTIFY[e.event]}`, cut(e.text, 200)); }
+  const NOTIFY = { ask: "пишет Claude", prompt: "дал(а) Claude задание", commit: "сделал(а) коммит", push: "запушил(а) ветку", pr: "открыл(а) pull request", note: "пишет вам" };
+  function notify(e) { if (native && !e.local && NOTIFY[e.event] && e.user !== me && Date.now() - e.t < 120000) native.notify(`${e.user} ${NOTIFY[e.event]}`, cut(e.text, 200)); }
 
-  // ---------- setup ----------
+  // ---------- project settings ----------
   const dialog = $("[data-setup]"), form = $("[data-setup-form]");
-  function openSetup() {
-    form.me.value = cfg.me; form.topic.value = cfg.topic; form.server.value = cfg.server; form.token.value = cfg.token;
-    form.folder.value = cfg.folder; form.perm.value = cfg.perm;
+  let editing = null;   // project being edited, or null for a new one
+  function openSetup(asNew = false) {
+    editing = asNew || !proj ? null : proj;
+    const p = editing || { name: "", folder: "", topic: "", server: "https://ntfy.sh", token: "", perm: "acceptEdits" };
+    form.me.value = me; form.pname.value = p.name; form.folder.value = p.folder; form.topic.value = p.topic; form.server.value = p.server; form.token.value = p.token; form.perm.value = p.perm;
+    $("[data-setup-title]").innerHTML = (editing ? "Проект" : projects.length ? "Новый проект" : "Hi") + '<span class="dot"></span>';
+    $("[data-setup-title]").style.fontSize = editing || projects.length ? "56px" : "";
+    $("[data-setup-ok]").lastChild.textContent = editing ? "Сохранить" : "Добавить проект";
+    $("[data-setup-delete]").hidden = !editing || projects.length < 2;
     if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
-    (cfg.me ? form.topic : form.me).focus();
+    (!me ? form.me : native?.claude && !p.folder ? $("[data-pick-folder]") : form.topic).focus();
   }
-  $$("[data-open-setup]").forEach(b => b.addEventListener("click", openSetup));
+  $$("[data-open-setup]").forEach(b => b.addEventListener("click", () => openSetup(false)));
   $("[data-setup-close]").addEventListener("click", () => dialog.close());
+  $("[data-setup-delete]").addEventListener("click", () => {
+    if (!editing || !confirm(`Убрать проект «${editing.name}» из Cowork? Папка и репозиторий не пострадают, пропадёт только история чатов в приложении.`)) return;
+    projects = projects.filter(p => p.id !== editing.id);
+    store.del("cw.chats." + editing.id); store.del("cw.events." + editing.id);
+    saveProjects(); dialog.close();
+    proj = null; switchProject(projects[0]?.id);
+  });
   form.addEventListener("submit", ev => {
-    const me = form.me.value.trim(), topic = form.topic.value.trim();
-    if (!me || !topic) { ev.preventDefault(); (me ? form.topic : form.me).focus(); return; }
-    cfg = { ...cfg, me, topic, server: form.server.value.trim().replace(/\/+$/, "") || "https://ntfy.sh", token: form.token.value.trim(), folder: form.folder.value, perm: form.perm.value };
-    save(); connect(); loadFolder(); setTarget(); renderComposer();
+    const name = form.me.value.trim(), topic = form.topic.value.trim();
+    if (!name || !topic) { ev.preventDefault(); (name ? form.topic : form.me).focus(); return; }
+    me = name;
+    const folder = form.folder.value;
+    const fields = { name: form.pname.value.trim() || folder.split(/[\\/]/).filter(Boolean).pop() || "Проект", folder, topic, server: form.server.value.trim().replace(/\/+$/, "") || "https://ntfy.sh", token: form.token.value.trim(), perm: form.perm.value };
+    if (editing) {
+      const reconnect = editing.topic !== fields.topic || editing.server !== fields.server || editing.token !== fields.token;
+      Object.assign(editing, fields); saveProjects();
+      if (reconnect) connect(); else render();
+      loadFolder();
+    } else {
+      const p = { id: newId(), ...fields }; projects.push(p); saveProjects();
+      proj = null; switchProject(p.id);
+    }
   });
   $("[data-pick-folder]").addEventListener("click", async () => {
     const r = await native.claude.pickFolder(); if (!r) return;
     form.folder.value = r.path;
+    if (!form.pname.value.trim()) form.pname.value = r.path.split(/[\\/]/).filter(Boolean).pop() || "";
     // channel settings come straight from the project's .claude/cowork.env
     if (r.env.COWORK_TOPIC) form.topic.value = r.env.COWORK_TOPIC;
     if (r.env.COWORK_SERVER) form.server.value = r.env.COWORK_SERVER;
     if (r.env.COWORK_TOKEN) form.token.value = r.env.COWORK_TOKEN;
   });
   async function loadFolder() {
-    if (!native?.claude || !cfg.folder) return;
-    const info = await native.claude.folderInfo(cfg.folder);
+    shareCommands = false; repoUrl = "";
+    if (!native?.claude || !proj?.folder) return;
+    const info = await native.claude.folderInfo(proj.folder);
     shareCommands = info?.env?.COWORK_SHARE_COMMANDS === "1";
+    repoUrl = info?.repo || "";
   }
 
   // ---------- composer ----------
   const say = $("[data-say]"), msg = say.message, sendBtn = say.querySelector(".send"), hint = $("[data-hint]");
-  const canClaude = () => !!(native?.claude && ccOk && cfg.folder);
-  function setTarget(t) {
-    if (t) { target = t; store.set("cw.target", t); }
-    if (target === "claude" && !canClaude()) target = "partner";
-    renderComposer();
-  }
+  const canClaude = () => !!(native?.claude && ccOk && proj?.folder);
   function renderComposer() {
-    $$("[data-target]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.target === target)));
-    $('[data-target="claude"]').title = canClaude() ? "Задание вашему Claude Code" : !native?.claude ? "Доступно в приложении Cowork" : !ccOk ? "Claude Code не найден на этом компьютере" : "Выберите папку проекта в настройках";
-    $(".target").hidden = !native?.claude;
-    const toClaude = target === "claude";
-    msg.placeholder = toClaude ? (running ? "Claude работает…" : "Задание для Claude…") : "Написать напарнику…";
-    sendBtn.classList.toggle("stop", toClaude && !!running);
-    sendBtn.innerHTML = toClaude && running ? STOP_ICON : SEND_ICON;
-    sendBtn.setAttribute("aria-label", toClaude && running ? "Остановить Claude" : "Отправить");
-    sendBtn.disabled = toClaude && running ? false : !msg.value.trim();
-    if (!hint.dataset.sticky) hint.textContent = toClaude ? `Enter, отправить · Shift+Enter, новая строка · Claude работает в ${cfg.folder.split(/[\\/]/).pop()}` : "Enter, отправить · Shift+Enter, новая строка · Claude эти сообщения не видит";
-    $("[data-new-chat]").hidden = !canClaude();
+    const c = currentChat(), inChat = view === "chat";
+    const partnerChat = inChat && c && !c.mine;
+    const claudeOk = partnerChat ? !!proj : canClaude();
+    const t = target === "claude" && claudeOk ? "claude" : "partner";
+    const run = inChat && chatId ? activeRun(chatId) : null;
+    $$("[data-target]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.target === t)));
+    const cb = $('[data-target="claude"]');
+    cb.title = partnerChat ? `Claude в этом чате работает на компьютере ${c.user}` : claudeOk ? "Задание вашему Claude Code" : !native?.claude ? "Доступно в приложении Cowork" : !ccOk ? "Claude Code не найден на этом компьютере" : "Выберите папку проекта в настройках";
+    $(".target").hidden = !native?.claude && !partnerChat;
+    const note = $("[data-owner-note]");
+    note.hidden = true;
+    msg.placeholder = t === "claude" ? (run ? "Claude работает. Можно написать ещё, сообщение встанет в очередь…" : view === "feed" ? "Задание для Claude, откроется новый чат…" : "Написать Claude…") : "Написать напарнику, Claude не увидит…";
+    const stop = t === "claude" && !!run && !msg.value.trim();
+    sendBtn.classList.toggle("stop", stop);
+    sendBtn.innerHTML = stop ? STOP_ICON : SEND_ICON;
+    sendBtn.setAttribute("aria-label", stop ? "Остановить Claude" : "Отправить");
+    sendBtn.disabled = stop ? false : !msg.value.trim();
+    if (!hint.dataset.sticky) hint.textContent = t === "claude" ? (partnerChat ? `Enter, отправить · Claude выполнит на компьютере ${c.user}, ответ увидите оба` : "Enter, отправить · Shift+Enter, новая строка · напарник видит этот чат и может писать сюда же") : "Enter, отправить · Shift+Enter, новая строка · Claude эти сообщения не видит";
   }
   $$("[data-target]").forEach(b => b.addEventListener("click", () => {
-    if (b.dataset.target === "claude" && !canClaude()) { if (native?.claude) openSetup(); return; }
-    setTarget(b.dataset.target); msg.focus();
+    if (b.dataset.target === "claude" && !canClaude()) { if (native?.claude) openSetup(false); return; }
+    target = b.dataset.target; store.set("cw.target", target); renderComposer(); msg.focus();
   }));
-  $("[data-new-chat]").addEventListener("click", () => { delete sessions[cfg.folder]; saveSessions(); flash("Новый разговор: Claude начнёт без памяти о прошлом."); });
   function flash(text) { hint.dataset.sticky = "1"; hint.textContent = text; clearTimeout(flash.t); flash.t = setTimeout(() => { delete hint.dataset.sticky; renderComposer(); }, 6000); }
-  const grow = () => { msg.style.height = "auto"; msg.style.height = Math.min(msg.scrollHeight, 160) + "px"; if (!(target === "claude" && running)) sendBtn.disabled = !msg.value.trim(); };
+  const grow = () => { msg.style.height = "auto"; msg.style.height = Math.min(msg.scrollHeight, 160) + "px"; renderComposer(); };
   msg.addEventListener("input", grow);
   msg.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); say.requestSubmit(); } });
   say.addEventListener("submit", async ev => {
     ev.preventDefault();
-    if (target === "claude" && running) { native.claude.stop(running.id); return; }
-    const text = msg.value.trim(); if (!text) return;
-    if (!cfg.me || (target === "partner" && !cfg.topic)) { openSetup(); return; }
-    if (target === "claude") { msg.value = ""; grow(); runClaude(text); return; }
+    const c = currentChat(), toClaude = $('[data-target="claude"]').getAttribute("aria-pressed") === "true";
+    const run = view === "chat" && chatId ? activeRun(chatId) : null;
+    const text = msg.value.trim();
+    if (toClaude && run && !text) { if (run.local) native.claude.stop(run.id); else publish({ event: "stop", chat: chatId, run: run.id }); return; }
+    if (!text) return;
+    if (!me || !proj) { openSetup(!proj); return; }
+    if (toClaude) { msg.value = ""; grow(); sendToClaude(text); return; }
     sendBtn.disabled = true;
-    try { await sendNote(text); msg.value = ""; grow(); }
+    try { await publish({ event: "note", text: text.slice(0, 1000), chat: view === "chat" ? chatId || undefined : undefined }); msg.value = ""; grow(); }
     catch { flash("Не отправилось. Проверьте сеть и настройки канала."); sendBtn.disabled = false; }
   });
 
+  function sendToClaude(text, title) {
+    const c = currentChat();
+    if (view === "chat" && c && !c.mine) { publish({ event: "ask", chat: c.id, to: c.user, text: cut(text, 1000) }, { full: text }); return; }
+    let chat = view === "chat" && c?.mine ? myChats.find(x => x.id === c.id) : null;
+    if (!chat) { chat = { id: newId(), title: "Новый чат", sid: "", t: Date.now() }; myChats.unshift(chat); }
+    if (chat.title === "Новый чат") chat.title = cut(title || text, 60);
+    saveChats();
+    if (view !== "chat" || chatId !== chat.id) show("chat", chat.id);
+    const run = newId();
+    publish({ event: "prompt", chat: chat.id, chatTitle: chat.title, text: cut(text, 1000), run }, { full: text });
+    enqueue(chat.id, { run, text, author: me });
+  }
+  function enqueue(chat, item) {
+    const q = queues.get(chat) || []; q.push({ ...item, pid: proj.id }); queues.set(chat, q);
+    if (item.ask) queuedAsks.add(item.ask);
+    if (!runs.has(chat)) startNext(chat); else render();
+  }
+  function startNext(chat) {
+    const q = queues.get(chat); if (!q || !q.length) return;
+    const item = q.shift();
+    if (item.ask) queuedAsks.delete(item.ask);
+    const rec = proj?.id === item.pid ? myChats.find(x => x.id === chat) : null;
+    if (!rec || !canClaude()) { if (item.ask) queuedAsks.delete(item.ask); return startNext(chat); }
+    if (item.ask) publish({ event: "take", chat, ask: item.ask, run: item.run });
+    runClaude(rec, item);
+  }
+  // asks addressed to this computer in its chats (also ones sent while the app was closed)
+  let asking = false;
+  function processAsks() {
+    if (asking || !canClaude() || !proj) return;
+    asking = true;
+    try {
+      const mine = new Set(myChats.map(c => c.id));
+      for (const e of events) {
+        if (e.event !== "ask" || e.user === me || !mine.has(e.chat) || queuedAsks.has(e.cid) || Date.now() - e.t > 12 * 3600e3) continue;
+        if (events.some(x => x.event === "take" && x.ask === e.cid)) continue;
+        enqueue(e.chat, { run: newId(), text: e.full || e.text, author: e.user, ask: e.cid });
+      }
+    } finally { asking = false; }
+  }
+
+  // ---------- the "Cowork" tab: change the app itself ----------
+  const selfDlg = $("[data-self-dialog]");
+  function openSelf() {
+    const p = projects.find(x => x.kind === "self");
+    if (p) { switchProject(p.id); return; }
+    $("[data-self-state]").textContent = !ccOk ? "Сначала нужен Claude Code на этом компьютере." : !projects.length ? "Сначала добавьте обычный проект: чат Cowork пойдёт через его канал." : "";
+    $("[data-self-clone]").disabled = !ccOk || !projects.length;
+    selfDlg.showModal();
+  }
+  $("[data-self-clone]").addEventListener("click", async ev => {
+    const b = ev.currentTarget, st = $("[data-self-state]");
+    const base = projects.find(p => p.kind !== "self"); if (!base) return;
+    b.disabled = true; st.textContent = "Скачиваю код…";
+    const r = await native.self.clone();
+    if (r.error) { st.innerHTML = `<b class="bad">Не получилось.</b> ${esc(cut(r.error, 300))}`; b.disabled = false; return; }
+    // the shared channel for this tab is derived from the project channel, so both partners land in the same one
+    const p = { id: "self", kind: "self", name: "Cowork", folder: r.path, topic: base.topic + "-app", server: base.server, token: base.token, perm: "acceptEdits" };
+    projects.push(p); saveProjects(); selfDlg.close();
+    proj = null; switchProject(p.id);
+  });
+  $("[data-preview]").addEventListener("click", async () => {
+    const r = await native.self.preview(proj.folder);
+    if (r?.error) flash(r.error);
+  });
+  $("[data-release]").addEventListener("click", () => {
+    if (!canClaude()) return;
+    sendToClaude("Подготовь выпуск новой версии Cowork. Посмотри git status и git diff, коротко проверь, что изменения не ломают приложение (node --check app/main.js, JS в dashboard/index.html без синтаксических ошибок). Подними patch-версию в app/package.json, закоммить все изменения с понятным сообщением на русском и запушь в main. После push GitHub сам соберёт и выпустит обновление. В конце напиши, какая версия выйдет и что в ней изменилось.", "Выпуск обновления");
+  });
+  if (/preview=1/.test(location.search)) { const bar = $("[data-preview-bar]"); bar.hidden = false; $("[data-preview-off]").addEventListener("click", () => native?.self?.previewOff()); }
+
   // ---------- Claude Code run ----------
-  const rel = f => { const a = String(f || "").replace(/\\/g, "/"), root = cfg.folder.replace(/\\/g, "/").replace(/\/+$/, "") + "/"; return a.toLowerCase().startsWith(root.toLowerCase()) ? a.slice(root.length) : a; };
-  const safe = p => p.catch(err => { console.warn("[cowork] publish", err); flash("Канал недоступен: напарник может не видеть эти шаги."); });
-  function onTool(name, input = {}) {
-    if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(name)) { const f = rel(input.file_path || input.notebook_path); return safe(publish({ event: "edit", file: f, text: "изменил(а) " + f })); }
+  const rel = f => { const a = String(f || "").replace(/\\/g, "/"), root = proj.folder.replace(/\\/g, "/").replace(/\/+$/, "") + "/"; return a.toLowerCase().startsWith(root.toLowerCase()) ? a.slice(root.length) : a; };
+  const safe = p => p && p.catch(err => { console.warn("[cowork] publish", err); flash("Канал недоступен: напарник может не видеть эти шаги."); });
+  function onTool(run, name, input = {}) {
+    const base0 = { chat: run.chat, run: run.id };
+    if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(name)) { const f = rel(input.file_path || input.notebook_path); return safe(publish({ event: "edit", ...base0, file: f, text: "изменил " + f })); }
     if (name === "Bash") {
       const cmd = String(input.command || "");
       if (/git\s+commit/.test(cmd)) {
         const h = cmd.match(/<<-?\s*'?"?(\w+)'?"?\s*\n\s*([^\n]+)/), m = cmd.match(/\s-\w*m\s+(?:"([^"]+)"|'([^']+)')/);
         const title = cut(((h && h[2]) || (m && !/^\$\(/.test(m[1] || "") && (m[1] || m[2])) || "").split("\n")[0], 160);
-        return safe(publish({ event: "commit", text: title ? "коммит: " + title : "сделал(а) коммит" }));
+        return safe(publish({ event: "commit", ...base0, text: title ? "коммит: " + title : "сделал коммит" }));
       }
-      if (/git\s+push/.test(cmd)) return safe(publish({ event: "push", text: "запушил(а) ветку" }));
-      if (/gh\s+pr\s+create/.test(cmd)) return safe(publish({ event: "pr", text: "открыл(а) pull request" }));
-      return safe(publish({ event: "bash", text: cut(cmd, 200) }, { local: !shareCommands }));
+      if (/git\s+push/.test(cmd)) return safe(publish({ event: "push", ...base0, text: "запушил ветку" }));
+      if (/gh\s+pr\s+create/.test(cmd)) return safe(publish({ event: "pr", ...base0, text: "открыл pull request" }));
+      return safe(publish({ event: "bash", ...base0, text: cut(cmd, 200) }));
     }
     const LABEL = { Read: ["Читает", input.file_path && rel(input.file_path)], Grep: ["Ищет", input.pattern], Glob: ["Ищет файлы", input.pattern], WebSearch: ["Ищет в интернете", input.query], WebFetch: ["Открывает", input.url], Task: ["Запускает помощника", input.description], TodoWrite: ["Обновляет план", ""] };
     const [label, arg] = LABEL[name] || [name, ""];
-    return publish({ event: "tool", label, text: cut(arg || "", 120) }, { local: true });
+    return safe(publish({ event: "tool", ...base0, label, text: cut(arg || "", 120) }));
   }
-  function runClaude(text) {
-    const id = newId();
-    running = { id, live: "", folder: cfg.folder };
-    renderComposer();
-    safe(publish({ event: "prompt", text: cut(text, 1000), run: id }));
-    native.claude.run({ id, prompt: text, cwd: cfg.folder, resume: sessions[cfg.folder] || "", perm: cfg.perm });
+  function runClaude(chat, item) {
+    const run = { id: item.run, chat: chat.id, pid: proj.id, live: "", sentLive: "", folder: proj.folder };
+    runs.set(chat.id, run);
+    const intro = chat.sid ? "" : "Это общий чат в приложении Cowork: с тобой одновременно работают несколько человек, каждое сообщение подписано именем автора. Отвечай всем в одном разговоре.\n\n";
+    native.claude.run({ id: run.id, prompt: `${intro}${item.author}: ${item.text}`, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, self: proj.kind === "self" });
+    render();
   }
   let liveFrame = 0;
   native?.claude?.onEvent(({ id, msg: m, done, error, stopped }) => {
-    if (!running || id !== running.id) return;
+    const run = [...runs.values()].find(r => r.id === id); if (!run) return;
+    const here = proj?.id === run.pid;
+    const chatRec = () => here ? myChats.find(c => c.id === run.chat) : null;
     if (m) {
-      if (m.type === "system" && m.subtype === "init" && m.session_id) { sessions[running.folder] = m.session_id; saveSessions(); }
+      if (m.type === "system" && m.subtype === "init" && m.session_id) { const c = chatRec(); if (c) { c.sid = m.session_id; saveChats(); } }
+      else if (!here) return;
       else if (m.type === "stream_event" && !m.parent_tool_use_id) {
         const ev = m.event || {};
-        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") { running.live += ev.delta.text; if (!liveFrame) liveFrame = requestAnimationFrame(() => { liveFrame = 0; render(); }); }
+        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") { run.live += ev.delta.text; scheduleFlush(1500); if (!liveFrame) liveFrame = requestAnimationFrame(() => { liveFrame = 0; render(); }); }
       }
       else if (m.type === "assistant" && !m.parent_tool_use_id) {
         for (const b of m.message?.content || []) {
-          if (b.type === "text" && b.text.trim()) {
-            const cid = newId(); fullText.set(cid, b.text); running.live = "";
-            safe(publish({ event: "reply", cid, text: cut(b.text, 1400) }));
-          } else if (b.type === "tool_use") onTool(b.name, b.input);
+          if (b.type === "text" && b.text.trim()) { run.live = ""; run.sentLive = ""; safe(publish({ event: "reply", chat: run.chat, run: run.id, text: cut(b.text, 1400) }, { full: b.text })); }
+          else if (b.type === "tool_use") onTool(run, b.name, b.input);
         }
       }
-      else if (m.type === "result" && m.is_error && m.result) running.err = String(m.result);
+      else if (m.type === "result" && m.is_error && m.result) run.err = String(m.result);
       return;
     }
     if (done) {
-      const err = running.err || error;
-      running = null; renderComposer();
-      if (err && !stopped) {
-        if (/No conversation found|session/i.test(err)) { delete sessions[cfg.folder]; saveSessions(); }
-        safe(publish({ event: "reply", err: true, text: cut(err, 600) }));
+      runs.delete(run.chat);
+      const err = run.err || error;
+      if (here) {
+        if (err && !stopped) {
+          if (/No conversation found/i.test(err)) { const c = chatRec(); if (c) { c.sid = ""; saveChats(); } }
+          safe(publish({ event: "reply", chat: run.chat, run: run.id, err: true, text: cut(err, 600) }));
+        }
+        safe(publish({ event: "idle", chat: run.chat, run: run.id, text: stopped ? "Остановлено" : err ? "Claude не смог закончить" : "Готово" }));
+        startNext(run.chat);
       }
-      safe(publish({ event: "idle", text: stopped ? "Остановлено" : err ? "Claude не смог закончить" : "Claude закончил" }));
+      render();
     }
   });
 
+  // ---------- invite ----------
+  function inviteText() {
+    return [
+      "Привет! Давай работать над проектом вместе в Cowork.",
+      "",
+      "1. Установи Claude Code и войди в свой аккаунт (подписка у каждого своя).",
+      "2. Прими приглашение в репозиторий на GitHub" + (repoUrl ? ": " + repoUrl : "") + " и склонируй его к себе.",
+      "3. Скачай и установи Cowork: " + RELEASES,
+      "4. В Cowork впиши своё имя и выбери папку с репозиторием. Канал подставится сам, а если нет, вот он:",
+      proj?.topic || "",
+      proj && proj.server !== "https://ntfy.sh" ? "Сервер: " + proj.server : "",
+      "",
+      "Дальше жмёшь «Новый чат» и пишешь задание Claude. Я увижу твою работу, ты мою."
+    ].filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n");
+  }
+  const inviteDlg = $("[data-invite-dialog]");
+  $("[data-invite]").addEventListener("click", () => {
+    if (!proj) { openSetup(true); return; }
+    $("[data-invite-text]").value = inviteText();
+    $("[data-open-access]").hidden = !repoUrl;
+    inviteDlg.showModal();
+  });
+  $("[data-open-access]").addEventListener("click", ev => { ev.preventDefault(); const u = repoUrl + "/settings/access"; native ? native.openUrl(u) : window.open(u, "_blank"); });
+  $("[data-invite-copy]").addEventListener("click", async ev => {
+    const t = $("[data-invite-text]").value, b = ev.currentTarget;
+    try { if (native?.copy) native.copy(t); else await navigator.clipboard.writeText(t); b.lastChild.textContent = "Скопировано"; }
+    catch { $("[data-invite-text]").select(); b.lastChild.textContent = "Нажмите Ctrl+C"; }
+    setTimeout(() => { b.lastChild.textContent = "Скопировать"; }, 2500);
+  });
+
+  // ---------- updates ----------
+  let appVersion = "", upd = { state: "idle" };
+  function renderUpd() {
+    const box = $("[data-upd]"), txt = $("[data-upd-text]"), btn = $("[data-upd-btn]");
+    box.hidden = !native; if (!native) return;
+    const S = {
+      idle: ["обновления проверяются сами", "Проверить", false],
+      checking: ["проверяю…", "Проверить", true],
+      downloading: [`скачиваю ${upd.version || "обновление"}${upd.percent != null ? " · " + upd.percent + "%" : "…"}`, "Проверить", true],
+      ready: [`готова версия ${upd.version}`, "Обновить", false],
+      latest: ["у вас последняя версия", "Проверить", false],
+      error: ["не удалось проверить", "Ещё раз", false],
+      dev: ["тестовая сборка", "Проверить", true]
+    }[upd.state] || ["", "Проверить", false];
+    txt.innerHTML = `<b>Cowork ${esc(appVersion)}</b>${esc(S[0])}`;
+    btn.textContent = S[1]; btn.disabled = S[2];
+    box.classList.toggle("ready", upd.state === "ready");
+  }
+  $("[data-upd-btn]").addEventListener("click", () => {
+    if (upd.state === "ready") native.installUpdate();
+    else { upd = { state: "checking" }; renderUpd(); native.checkUpdates(); }
+  });
+
   if (native) {
-    native.onOpenSetup(() => openSetup());
+    native.onOpenSetup(() => openSetup(false));
+    native.version().then(v => { appVersion = v; renderUpd(); });
+    native.onUpdateStatus(st => { upd = { ...upd, ...st }; if (st.state !== "downloading") delete upd.percent; renderUpd(); });
+    renderUpd();
     if (native.claude) {
-      $("[data-cc-setup]").hidden = false;
-      target = store.get("cw.target") || "claude";
+      $("[data-cc-setup]").hidden = false; $("[data-cc-setup2]").hidden = false;
       native.claude.check().then(r => {
         ccOk = !!r.ok;
         $("[data-cc-state]").innerHTML = r.ok ? `<b>Claude Code ${esc(r.version)}</b> найден. Работает на вашей подписке.` : '<b class="bad">Claude Code не найден.</b> Установите его и войдите командой claude, затем перезапустите Cowork.';
-        setTarget();
+        render();
       });
-      loadFolder();
     }
-    native.version().then(v => { $("[data-conn-sub]").title = "Cowork " + v; });
-    native.onUpdateStatus(st => { if (st.state === "downloading") hint.textContent = `Скачиваю обновление${st.percent != null ? " " + st.percent + "%" : ""}…`; if (st.state === "ready") hint.textContent = `Обновление ${st.version} готово, перезапустите приложение.`; });
   }
-  renderStatus(); renderComposer();
-  if (cfg.topic && cfg.me) connect(); else setTimeout(openSetup, 600);
+
+  connect().then(() => {
+    loadFolder();
+    const mine = chatList()[0];
+    show(mine ? "chat" : "feed", mine?.id);
+  });
+  if (!proj || !me) setTimeout(() => openSetup(!proj), 600);
   setInterval(() => { if (events.length) render(); }, 30000);
 })();
 </script>
