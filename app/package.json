@@ -1,0 +1,43 @@
+{
+  "name": "cowork-live",
+  "productName": "Cowork",
+  "version": "0.1.0",
+  "description": "Живая панель совместной работы двух пользователей Claude Code",
+  "author": "Cowork",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "web": "node scripts/copy-web.js",
+    "start": "npm run web && electron .",
+    "dist:win": "npm run web && electron-builder --win nsis --x64 --publish never",
+    "release:win": "npm run web && electron-builder --win nsis --x64 --publish always"
+  },
+  "dependencies": {
+    "electron-log": "5.2.4",
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.cowork.live",
+    "productName": "Cowork",
+    "artifactName": "Cowork-Setup-${version}.${ext}",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "web/**", "build/icon.png", "package.json"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Cowork"
+    },
+    "publish": [{ "provider": "github", "owner": "melloskiess-spec", "repo": "cowork-releases", "releaseType": "release" }]
+  }
+}
