@@ -1,5 +1,7 @@
 const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, dialog, nativeImage } = require("electron");
 const path = require("path");
+const fs = require("fs");
+const { spawn } = require("child_process");
 const log = require("electron-log");
 const { autoUpdater } = require("electron-updater");
 
@@ -91,6 +93,84 @@ ipcMain.on("cowork:notify", (_e, { title, body }) => {
 });
 ipcMain.handle("cowork:version", () => app.getVersion());
 ipcMain.on("cowork:check-updates", () => checkUpdates(true));
+
+// ---------- Claude Code: запуск вашего локального claude в папке проекта ----------
+const runs = new Map();
+const isWin = process.platform === "win32";
+const PERMS = new Set(["acceptEdits", "bypassPermissions", "plan"]);
+
+function readEnvFile(dir) {
+  const out = {};
+  for (const f of ["cowork.env", "cowork.local.env"]) {
+    try {
+      for (const line of fs.readFileSync(path.join(dir, ".claude", f), "utf8").split(/\r?\n/)) {
+        const m = line.match(/^\s*(COWORK_[A-Z_]+)\s*=\s*"?([^"#]*?)"?\s*(#.*)?$/);
+        if (m) out[m[1]] = m[2].trim();
+      }
+    } catch {}
+  }
+  return out;
+}
+
+ipcMain.handle("claude:check", () => new Promise(resolve => {
+  let out = "", done = false;
+  const finish = v => { if (!done) { done = true; resolve(v); } };
+  try {
+    const p = spawn("claude", ["--version"], { shell: isWin, windowsHide: true });
+    p.stdout.on("data", d => out += d);
+    p.on("error", () => finish({ ok: false }));
+    p.on("close", code => finish(code === 0 ? { ok: true, version: out.trim().split(/\s+/)[0] } : { ok: false }));
+    setTimeout(() => { try { p.kill(); } catch {} finish({ ok: false, timeout: true }); }, 20000);
+  } catch { finish({ ok: false }); }
+}));
+
+ipcMain.handle("claude:pick-folder", async () => {
+  const r = await dialog.showOpenDialog(win, { title: "Папка проекта", properties: ["openDirectory"] });
+  if (r.canceled || !r.filePaths[0]) return null;
+  return { path: r.filePaths[0], env: readEnvFile(r.filePaths[0]) };
+});
+ipcMain.handle("claude:folder-info", (_e, dir) => {
+  try { if (!dir || !fs.statSync(dir).isDirectory()) return null; } catch { return null; }
+  return { path: dir, env: readEnvFile(dir) };
+});
+
+ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm }) => {
+  const send = msg => { if (!e.sender.isDestroyed()) e.sender.send("claude:event", { id, ...msg }); };
+  if (!cwd || !fs.existsSync(cwd)) return send({ done: true, error: "Папка проекта не найдена. Выберите её в настройках." });
+  const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
+    "--permission-mode", PERMS.has(perm) ? perm : "acceptEdits"];
+  if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
+  // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
+  const env = { ...process.env, COWORK_ENABLED: "0" };
+  let p;
+  try { p = spawn("claude", args, { cwd, env, shell: isWin, windowsHide: true }); }
+  catch (err) { return send({ done: true, error: String(err.message || err) }); }
+  runs.set(id, p);
+  let buf = "", errTail = "";
+  p.stdout.setEncoding("utf8");
+  p.stdout.on("data", chunk => {
+    buf += chunk;
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+      if (!line) continue;
+      try { send({ msg: JSON.parse(line) }); } catch {}
+    }
+  });
+  p.stderr.setEncoding("utf8");
+  p.stderr.on("data", d => { errTail = (errTail + d).slice(-1500); });
+  p.on("error", err => { runs.delete(id); send({ done: true, error: err.code === "ENOENT" ? "Claude Code не найден. Установите его и войдите в аккаунт." : String(err.message || err) }); });
+  p.on("close", code => { runs.delete(id); send({ done: true, code, stopped: p._stopped === true, error: code && !p._stopped ? errTail.trim() || `claude завершился с кодом ${code}` : "" }); });
+  p.stdin.end(String(prompt || ""));
+});
+
+ipcMain.on("claude:stop", (_e, id) => {
+  const p = runs.get(id); if (!p) return;
+  p._stopped = true;
+  if (isWin) spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true });
+  else p.kill("SIGTERM");
+});
+app.on("before-quit", () => { for (const id of runs.keys()) ipcMain.emit("claude:stop", null, id); });
 
 app.whenReady().then(() => {
   createWindow();
