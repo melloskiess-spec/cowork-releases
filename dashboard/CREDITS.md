@@ -4,3 +4,4 @@
 - Fonts: Gabarito and Onest from Google Fonts, SIL Open Font License 1.1.
 - No photos or third-party libraries are used.
 - Chat layout (centered conversation column, greeting with suggestions, composer card, history grouped by day) follows the structure of Vercel's AI Chatbot template, Apache License 2.0: https://github.com/vercel/ai-chatbot. No code was copied.
+- Claude mark: trademark of Anthropic, used only to label Claude's messages. SVG path from Simple Icons (CC0 1.0): https://simpleicons.org
