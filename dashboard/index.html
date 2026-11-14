@@ -373,6 +373,8 @@ body.collapsed .main { margin-left: 10px; }
 .aibody .reply.err { padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--warn) 10%, #fff); color: var(--c1); }
 .aibody .reply.err .who { display: flex; }
 .aibody .reply.streaming { color: var(--c6); }
+.ainame { display: inline-flex; align-items: center; gap: 5px; }
+.ainame svg { width: 15px; height: 15px; fill: var(--c3); }
 .tools { border: 1px solid var(--line-l); border-radius: 14px; background: #fbfafd; }
 .tools summary { display: flex; align-items: center; gap: 9px; padding: 8px 12px; font-size: 13px; color: var(--c6); cursor: pointer; list-style: none; user-select: none; }
 .tools summary::-webkit-details-marker { display: none; }
@@ -907,7 +909,7 @@ body.collapsed .main { margin-left: 10px; }
       if (group.live) body += (group.live.trim() ? replyHtml(group.live, "streaming") : "") + '<span class="typing" aria-label="Claude работает"><i></i><i></i><i></i></span>';
       if (status) body += `<div class="ai-status">${esc(status)}</div>`;
       const fresh = !shown.has(group.key); shown.add(group.key);
-      out.push(`<div class="msg ai ${fresh ? "fresh" : ""}"><span class="aiic">✦</span><div class="aibody"><div class="meta"><b>Claude</b>${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</div>${body}</div></div>`);
+      out.push(`<div class="msg ai ${fresh ? "fresh" : ""}"><span class="aiic">✦</span><div class="aibody"><div class="meta"><b class="ainame"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.5 4.6 2.9 7 7.5 7.5-4.6.5-7 2.9-7.5 7.5-.5-4.6-2.9-7-7.5-7.5 4.6-.5 7-2.9 7.5-7.5Z"/><path d="M19 15.5c.2 1.8 1.2 2.8 3 3-1.8.2-2.8 1.2-3 3-.2-1.8-1.2-2.8-3-3 1.8-.2 2.8-1.2 3-3Z"/></svg>Claude</b>${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</div>${body}</div></div>`);
       group = null;
     };
     for (const e of items) {
