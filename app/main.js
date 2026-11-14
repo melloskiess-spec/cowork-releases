@@ -154,13 +154,14 @@ const BIN_FILE = () => path.join(app.getPath("userData"), "claude-path.txt");
 const BIN_NAMES = isWin ? ["claude.exe", "claude.cmd", "claude.bat"] : ["claude"];
 const isFile = f => { try { return fs.statSync(f).isFile(); } catch { return false; } };
 let CLAUDE_BIN = null, CLAUDE_TRIED = [];
-function resolveClaude() {
+function resolveClaude(quick) {
   const tried = [];
   try { const own = fs.readFileSync(BIN_FILE(), "utf8").trim(); if (own) { tried.push(own); if (isFile(own)) return { bin: own, tried }; } } catch {}
   for (const dir of claudePath().split(isWin ? ";" : ":")) {
     tried.push(dir);
     for (const n of BIN_NAMES) { const f = path.join(dir.replace(/^"|"$/g, ""), n); if (isFile(f)) return { bin: f, tried }; }
   }
+  if (quick) return { bin: null, tried };
   const cp = require("child_process"), opt = { encoding: "utf8", windowsHide: true, timeout: 10000, env: claudeEnv() };
   const probes = isWin
     ? [["where.exe", ["claude"]], ["powershell.exe", ["-NoLogo", "-Command", "(Get-Command claude -ErrorAction SilentlyContinue).Source"]]]
@@ -177,8 +178,8 @@ function resolveClaude() {
   return { bin: null, tried };
 }
 // .cmd/.bat запускаются только через cmd.exe, поэтому их и аргументы с пробелами берём в кавычки; .exe запускаем напрямую
-function spawnClaude(args, opts) {
-  if (!CLAUDE_BIN) { const r = resolveClaude(); CLAUDE_BIN = r.bin; CLAUDE_TRIED = r.tried; }
+function spawnClaude(args, opts, quick) {
+  if (!CLAUDE_BIN) { const r = resolveClaude(quick); CLAUDE_BIN = r.bin; CLAUDE_TRIED = r.tried; }
   if (!CLAUDE_BIN) { const err = new Error("Claude Code не найден. Укажите путь к claude в настройках проекта."); err.code = "ENOENT"; throw err; }
   if (isWin && /\.(cmd|bat)$/i.test(CLAUDE_BIN)) {
     const q = a => /[\s"&|<>^()]/.test(a) ? `"${a.replace(/"/g, '""')}"` : a;
@@ -187,12 +188,12 @@ function spawnClaude(args, opts) {
   return spawn(CLAUDE_BIN, args, { ...opts, shell: false, windowsHide: true });
 }
 
-ipcMain.handle("claude:check", () => new Promise(resolve => {
+ipcMain.handle("claude:check", (_e, quick) => new Promise(resolve => {
   let out = "", err = "", done = false;
   CLAUDE_ENV = null; CLAUDE_BIN = null;   // каждая проверка ищет заново: вдруг Claude Code только что установили
   const finish = v => { if (!done) { done = true; resolve({ ...v, bin: CLAUDE_BIN, tried: CLAUDE_TRIED.slice(0, 40) }); } };
   try {
-    const p = spawnClaude(["--version"], { env: claudeEnv() });
+    const p = spawnClaude(["--version"], { env: claudeEnv() }, !!quick);
     p.stdout.on("data", d => out += d);
     p.stderr.on("data", d => err += d);
     p.on("error", e => finish({ ok: false, error: String(e.message || e) }));
@@ -200,6 +201,34 @@ ipcMain.handle("claude:check", () => new Promise(resolve => {
     setTimeout(() => { try { p.kill(); } catch {} finish({ ok: false, timeout: true, error: "claude --version не ответил за 30 секунд" }); }, 30000);
   } catch (e) { finish({ ok: false, error: e.code === "ENOENT" ? "" : String(e.message || e) }); }
 }));
+// установка Claude Code в один клик: видимое окно PowerShell ставит его официальным установщиком,
+// добавляет ~/.local/bin в PATH пользователя, показывает версию и открывает Claude для входа в подписку
+const INSTALL_PS = `
+$ErrorActionPreference = 'Continue'
+$Host.UI.RawUI.WindowTitle = 'Cowork: установка Claude Code'
+Write-Host 'Cowork ставит Claude Code с claude.ai...' -ForegroundColor Magenta
+irm https://claude.ai/install.ps1 | iex
+$bin = Join-Path $HOME '.local\\bin'
+$exe = Join-Path $bin 'claude.exe'
+if (-not (Test-Path $exe)) { Write-Host 'Не получилось: claude.exe не появился. Пришлите этот текст.' -ForegroundColor Red; return }
+$p = [Environment]::GetEnvironmentVariable('Path', 'User')
+if (-not (($p -split ';') -contains $bin)) { [Environment]::SetEnvironmentVariable('Path', (($p.TrimEnd(';')) + ';' + $bin), 'User'); $env:Path += ';' + $bin; Write-Host 'Папка добавлена в PATH.' -ForegroundColor Green }
+Write-Host ''
+Write-Host ('Установлено: ' + (& $exe --version)) -ForegroundColor Green
+Write-Host ''
+Write-Host 'Сейчас откроется Claude. Войдите в свою подписку в браузере, потом напишите /exit и закройте окно.' -ForegroundColor Magenta
+Write-Host 'Cowork заметит Claude Code сам.'
+& $exe
+`;
+ipcMain.handle("claude:install", () => {
+  if (!isWin) return { ok: false, error: "Автоустановка есть только на Windows. Выполните в терминале: curl -fsSL https://claude.ai/install.sh | bash" };
+  try {
+    const enc = Buffer.from(INSTALL_PS, "utf16le").toString("base64");
+    spawn("powershell.exe", ["-NoExit", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", enc],
+      { detached: true, stdio: "ignore", windowsHide: false }).unref();
+    return { ok: true };
+  } catch (e) { return { ok: false, error: String(e.message || e) }; }
+});
 ipcMain.handle("claude:pick-bin", async () => {
   const r = await dialog.showOpenDialog(win, { title: "Где лежит claude", properties: ["openFile"],
     filters: isWin ? [{ name: "Claude Code", extensions: ["exe", "cmd", "bat"] }] : [] });

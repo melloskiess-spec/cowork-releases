@@ -1421,11 +1421,26 @@ body.collapsed .main { margin-left: 10px; }
         const pick = ' <a href="#" data-cc-pick style="color:var(--c3)">указать путь к claude вручную</a>', again = ' <a href="#" data-cc-recheck style="color:var(--c3)">проверить снова</a>';
         $("[data-cc-state]").innerHTML = r.ok ? `<b>Claude Code ${esc(r.version)}</b> найден. Работает на вашей подписке.`
           : r.bin ? `<b class="bad">Claude Code найден, но не запускается.</b> <code>${esc(r.bin)}</code>${r.error ? `<br>${esc(r.error)}` : ""}<br>${again} ·${pick}`
-          : `<b class="bad">Claude Code не найден.</b> Если он установлен, в PowerShell выполните <code>where.exe claude</code> и укажите этот файл:${pick}. Если не установлен: <code>irm https://claude.ai/install.ps1 | iex</code>, затем ${again}.<details style="margin-top:6px"><summary style="cursor:pointer">где искал</summary><code style="font-size:11px;white-space:pre-wrap">${esc((r.tried || []).join("\n"))}</code></details>`;
+          : `<b class="bad">Claude Code не найден.</b> <button type="button" class="top-btn primary" data-cc-install style="margin:8px 0">Установить Claude Code</button><br>Если он уже установлен, в PowerShell выполните <code>where.exe claude</code> и укажите этот файл:${pick}. Или установите сами: <code>irm https://claude.ai/install.ps1 | iex</code>, затем ${again}.<details style="margin-top:6px"><summary style="cursor:pointer">где искал</summary><code style="font-size:11px;white-space:pre-wrap">${esc((r.tried || []).join("\n"))}</code></details>`;
         render();
       }); };
       ccCheck();
       document.addEventListener("click", ev => { if (ev.target.closest("[data-cc-recheck]")) { ev.preventDefault(); ccCheck(); } });
+      // после кнопки «Установить» проверяем каждые 5 секунд, пока Claude Code не появится (до 15 минут)
+      let ccWatch = null;
+      document.addEventListener("click", ev => {
+        const b = ev.target.closest("[data-cc-install]"); if (!b || !native.claude.install) return;
+        b.disabled = true; b.textContent = "Открываю PowerShell…";
+        native.claude.install().then(r => {
+          if (!r.ok) { $("[data-cc-state]").innerHTML = `<b class="bad">Не удалось запустить установку.</b> ${esc(r.error || "")}`; return; }
+          $("[data-cc-state]").innerHTML = "<b>Идёт установка в окне PowerShell.</b> Когда откроется Claude, войдите в подписку. Cowork проверит сам.";
+          clearInterval(ccWatch); const t0 = Date.now();
+          ccWatch = setInterval(() => native.claude.check(true).then(c => {
+            if (c.ok) { clearInterval(ccWatch); ccCheck(); }
+            else if (Date.now() - t0 > 15 * 60e3) { clearInterval(ccWatch); ccCheck(); }
+          }), 5000);
+        });
+      });
       document.addEventListener("click", ev => { if (ev.target.closest("[data-cc-pick]")) { ev.preventDefault(); native.claude.pickBin?.().then(ok => ok && ccCheck()); } });
     }
   }

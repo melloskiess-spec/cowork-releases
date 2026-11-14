@@ -11,8 +11,9 @@ contextBridge.exposeInMainWorld("coworkNative", {
   onOpenSetup: fn => ipcRenderer.on("cowork:open-setup", () => fn()),
   onUpdateStatus: fn => ipcRenderer.on("cowork:update-status", (_e, s) => fn(s)),
   claude: {
-    check: () => ipcRenderer.invoke("claude:check"),
+    check: quick => ipcRenderer.invoke("claude:check", !!quick),
     pickBin: () => ipcRenderer.invoke("claude:pick-bin"),
+    install: () => ipcRenderer.invoke("claude:install"),
     pickFolder: () => ipcRenderer.invoke("claude:pick-folder"),
     folderInfo: dir => ipcRenderer.invoke("claude:folder-info", String(dir || "")),
     run: opts => ipcRenderer.send("claude:run", opts),
