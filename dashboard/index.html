@@ -401,6 +401,13 @@ body.collapsed .main { margin-left: 10px; }
 .uimgs { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-top: 6px; max-width: min(82%, 60ch); }
 .uimgs img { max-width: 220px; max-height: 180px; border-radius: 14px; object-fit: cover; cursor: zoom-in; box-shadow: 0 1px 0 rgb(0 0 0 / .05); }
 .uimgs img.broken { display: none; }
+.fchip { display: inline-flex; align-items: center; gap: 8px; max-width: 280px; padding: 9px 13px; border-radius: 14px; background: var(--c4); color: inherit; font-size: 13.5px; text-decoration: none; box-shadow: inset 0 0 0 1px var(--line-l); }
+a.fchip:hover { box-shadow: inset 0 0 0 1.5px var(--c3); }
+.fchip svg, .att.file svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--c3); stroke-width: 1.8; stroke-linejoin: round; }
+.fchip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.fchip i, .att.file i { font-style: normal; color: var(--c6); font-size: 12px; white-space: nowrap; }
+.att.file { width: auto; max-width: 220px; display: flex; align-items: center; gap: 8px; padding: 0 30px 0 12px; font-size: 13px; }
+.att.file span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .uimgs .gone { font-size: 12px; color: var(--c5); }
 .zoom { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 30px; background: rgb(13 12 17 / .82); cursor: zoom-out; animation: viewin .2s var(--out); }
 .zoom img { max-width: 100%; max-height: 100%; border-radius: 14px; box-shadow: 0 30px 80px -20px #000; }
@@ -534,7 +541,7 @@ body[data-theme] .msg.note .ubub { background: none; }
           <div class="cmd"><code>✦ Cowork</code><p>Особый проект в том же списке: чат, в котором Claude меняет само приложение. «Предпросмотр» показывает правки сразу, «Выпустить обновление» отправляет их вам обоим.</p></div>
           <div class="cmd"><code>Напарнику</code><p>Переключатель в поле ввода. Сообщение увидит только напарник, Claude его не читает.</p></div>
           <div class="cmd"><code>Оба Claude</code><p>Ваш Claude становится ведущим: делит задачу и передаёт часть Claude напарника. Тот делает её на своём компьютере в отдельной ветке и присылает отчёт, ведущий сливает ветки. Нужно, чтобы Cowork был открыт у обоих.</p></div>
-          <div class="cmd"><code>Фото</code><p>Ctrl+V, перетаскивание или скрепка в поле ввода, до четырёх за раз. Claude их видит, напарник тоже. На ntfy.sh фото хранятся около трёх часов.</p></div>
+          <div class="cmd"><code>Фото и файлы</code><p>Ctrl+V, перетаскивание или скрепка, до шести за раз, файл до 15 МБ. Claude их получает, архивы zip и tar Cowork распаковывает ему сам. Напарник видит и может скачать. На ntfy.sh вложения хранятся около трёх часов.</p></div>
           <div class="cmd"><code>/sync</code><p>Если работаете в терминале: в начале сессии Claude подтянет изменения и расскажет, что сделал напарник.</p></div>
         </div>
         <h2 class="h2">Вопросы<span class="dot"></span></h2>
@@ -554,11 +561,11 @@ body[data-theme] .msg.note .ubub { background: none; }
       <div class="owner-note" data-owner-note hidden></div>
       <form data-say class="box">
         <div class="atts" data-atts hidden></div>
-        <input type="file" accept="image/*" multiple hidden data-file>
+        <input type="file" multiple hidden data-file>
         <textarea rows="2" name="message" placeholder="Написать Claude…" aria-label="Сообщение"></textarea>
         <div class="bar">
           <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="team" aria-pressed="false" title="Ваш Claude и Claude напарника делят задачу">Оба Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
-          <button type="button" class="clip" data-clip aria-label="Приложить фото" title="Приложить фото (или Ctrl+V, или перетащите)"><svg viewBox="0 0 24 24"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
+          <button type="button" class="clip" data-clip aria-label="Приложить файл" title="Приложить фото или файл (или Ctrl+V, или перетащите)"><svg viewBox="0 0 24 24"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
           <span class="hint" data-hint></span>
           <button class="send" type="submit" disabled aria-label="Отправить"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
         </div>
@@ -978,10 +985,15 @@ body[data-theme] .msg.note .ubub { background: none; }
   };
   // a chat reads like one conversation: people's messages on the right, Claude's answers with folded steps on the left
   const imgSrc = u => u + (proj?.token ? (u.includes("?") ? "&" : "?") + authQ().slice(1) : "");
+  const fsize = n => !n ? "" : n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + " КБ" : (n / 1048576).toFixed(1).replace(".", ",") + " МБ";
+  const FILE_ICON = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
   function imgsHtml(e) {
     const srcs = e.imgLocal || (Array.isArray(e.img) ? e.img.map(i => i && i.u ? imgSrc(String(i.u)) : "").filter(u => /^https?:\/\//.test(u)) : []);
-    if (!srcs.length) return "";
-    return `<div class="uimgs">${srcs.map(src => `<img src="${esc(src)}" alt="фото" data-zoom loading="lazy">`).join("")}</div>`;
+    const files = e.fileLocal || (Array.isArray(e.files) ? e.files.filter(f => f && /^https?:\/\//.test(String(f.u))) : []);
+    if (!srcs.length && !files.length) return "";
+    return `<div class="uimgs">${srcs.map(src => `<img src="${esc(src)}" alt="фото" data-zoom loading="lazy">`).join("")}${files.map(f => f.u
+      ? `<a class="fchip" href="${esc(imgSrc(String(f.u)))}" target="_blank" rel="noopener" title="Скачать">${FILE_ICON}<span>${esc(f.n || "файл")}</span><i>${fsize(f.s)}</i></a>`
+      : `<span class="fchip">${FILE_ICON}<span>${esc(f.n || "файл")}</span><i>${fsize(f.s)}</i></span>`).join("")}</div>`;
   }
   function renderChat(list, c, emptyTitle, emptyText, withSuggest) {
     const run = c ? activeRun(c.id) : null;
@@ -1245,10 +1257,10 @@ body[data-theme] .msg.note .ubub { background: none; }
   // publish: show the event immediately, then send it in a batch; the echo is dropped by cid.
   // Batching keeps us well under the ntfy.sh rate limit while Claude streams many small steps.
   const outbox = []; let flushTimer = 0, flushDue = 0, flushing = false;
-  function publish(fields, { local = false, full, imgLocal } = {}) {
+  function publish(fields, { local = false, full, imgLocal, fileLocal } = {}) {
     if (!proj) return Promise.resolve(null);
     const e = { v: 1, user: me, cid: newId(), ts: new Date().toISOString(), ...fields };
-    const shownE = { ...e }; if (local) shownE.local = true; if (full) shownE.full = full; if (imgLocal?.length) shownE.imgLocal = imgLocal;
+    const shownE = { ...e }; if (local) shownE.local = true; if (full) shownE.full = full; if (imgLocal?.length) shownE.imgLocal = imgLocal; if (fileLocal?.length) shownE.fileLocal = fileLocal;
     if (ingest(shownE)) render();
     if (!local) { outbox.push(e); scheduleFlush(["prompt", "ask", "note", "stop", "take", "idle"].includes(e.event) ? 250 : 1500); }
     return Promise.resolve(e);
@@ -1386,12 +1398,21 @@ body[data-theme] .msg.note .ubub { background: none; }
   const attBox = $("[data-atts]"), fileIn = $("[data-file]");
   function renderAtts() {
     attBox.hidden = !atts.length;
-    attBox.innerHTML = atts.map((a, i) => `<div class="att"><img src="${a.url}" alt=""><button type="button" data-att-del="${i}" aria-label="Убрать фото">×</button></div>`).join("");
+    attBox.innerHTML = atts.map((a, i) => a.f
+      ? `<div class="att file" title="${esc(a.name)}">${FILE_ICON}<span>${esc(a.name)}</span><i>${fsize(a.s)}</i><button type="button" data-att-del="${i}" aria-label="Убрать файл">×</button></div>`
+      : `<div class="att"><img src="${a.url}" alt=""><button type="button" data-att-del="${i}" aria-label="Убрать фото">×</button></div>`).join("");
     renderComposer();
   }
   async function addImage(file) {
-    if (!file || !/^image\//.test(file.type)) return;
-    if (atts.length >= 4) { flash("Не больше четырёх фото за раз."); return; }
+    if (!file) return;
+    if (atts.length >= 6) { flash("Не больше шести вложений за раз."); return; }
+    // photos are shrunk; anything else (archives, documents, code) goes as is, up to the ntfy.sh limit
+    if (!/^image\/(png|jpe?g|webp|gif|bmp)$/.test(file.type) || file.size > 25e6) {
+      if (file.size > 15 * 1048576) { flash(`«${file.name}» больше 15 МБ: сервер канала такой файл не примет.`); return; }
+      if (!file.size) { flash(`«${file.name}» пустой или это папка. Папку сначала запакуйте в zip.`); return; }
+      atts.push({ f: true, blob: file, name: String(file.name || "file"), s: file.size, url: "" });
+      renderAtts(); return;
+    }
     try {
       const bmp = await createImageBitmap(file), k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
       const cv = document.createElement("canvas"); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
@@ -1403,16 +1424,16 @@ body[data-theme] .msg.note .ubub { background: none; }
       renderAtts();
     } catch { flash("Не получилось прочитать это фото."); }
   }
-  attBox.addEventListener("click", ev => { const b = ev.target.closest("[data-att-del]"); if (!b) return; const [a] = atts.splice(+b.dataset.attDel, 1); if (a) URL.revokeObjectURL(a.url); renderAtts(); });
+  attBox.addEventListener("click", ev => { const b = ev.target.closest("[data-att-del]"); if (!b) return; const [a] = atts.splice(+b.dataset.attDel, 1); if (a?.url) URL.revokeObjectURL(a.url); renderAtts(); });
   $("[data-clip]").addEventListener("click", () => fileIn.click());
   fileIn.addEventListener("change", () => { [...fileIn.files].forEach(addImage); fileIn.value = ""; });
-  msg.addEventListener("paste", ev => { const fs = [...(ev.clipboardData?.items || [])].filter(i => i.kind === "file" && /^image\//.test(i.type)).map(i => i.getAsFile()); if (fs.length) { ev.preventDefault(); fs.forEach(addImage); } });
+  msg.addEventListener("paste", ev => { const fs = [...(ev.clipboardData?.items || [])].filter(i => i.kind === "file").map(i => i.getAsFile()).filter(Boolean); if (fs.length) { ev.preventDefault(); fs.forEach(addImage); } });
   document.addEventListener("dragover", ev => ev.preventDefault());
-  document.addEventListener("drop", ev => { ev.preventDefault(); const fs = [...(ev.dataTransfer?.files || [])].filter(f => /^image\//.test(f.type)); if (fs.length && !ev.defaultHandled) fs.forEach(addImage); });
+  document.addEventListener("drop", ev => { ev.preventDefault(); const fs = [...(ev.dataTransfer?.files || [])]; if (fs.length && !ev.defaultHandled) fs.forEach(addImage); });
   const dropZone = $("[data-composer]");
   dropZone.addEventListener("dragover", ev => { if ([...(ev.dataTransfer?.types || [])].includes("Files")) { ev.preventDefault(); say.classList.add("drop"); } });
   dropZone.addEventListener("dragleave", () => say.classList.remove("drop"));
-  dropZone.addEventListener("drop", ev => { say.classList.remove("drop"); const fs = [...(ev.dataTransfer?.files || [])].filter(f => /^image\//.test(f.type)); if (fs.length) { ev.preventDefault(); ev.stopPropagation(); fs.forEach(addImage); } });
+  dropZone.addEventListener("drop", ev => { say.classList.remove("drop"); const fs = [...(ev.dataTransfer?.files || [])]; if (fs.length) { ev.preventDefault(); ev.stopPropagation(); fs.forEach(addImage); } });
   document.addEventListener("keydown", ev => { if (ev.key === "Escape") $(".zoom")?.remove(); });
   document.addEventListener("click", ev => {
     const z = ev.target.closest("img[data-zoom]");
@@ -1424,9 +1445,10 @@ body[data-theme] .msg.note .ubub { background: none; }
   async function uploadAtts(list) {
     const out = [];
     for (const a of list) {
-      const item = { n: a.name, local: a.url, blob: a.blob };
+      const item = { n: a.name, local: a.url, blob: a.blob, f: !!a.f, s: a.s };
       try {
-        const headers = { Filename: a.name, Message: "cowork-file" };
+        const ascii = a.name.replace(/[^\w.-]/g, "_").replace(/_+/g, "_").slice(-80) || "file";
+        const headers = { Filename: ascii, Message: "cowork-file" };
         if (proj.token) headers.Authorization = "Bearer " + proj.token;
         const r = await fetch(base(), { method: "PUT", headers, body: a.blob });
         const j = r.ok ? await r.json() : null;
@@ -1434,9 +1456,16 @@ body[data-theme] .msg.note .ubub { background: none; }
       } catch {}
       out.push(item);
     }
-    if (out.some(i => !i.u)) flash("Сервер канала не принял фото: его увидит только ваш Claude, напарник нет.");
+    if (out.some(i => !i.u)) flash("Сервер канала не принял вложение: его увидит только ваш Claude, напарник нет.");
     return out;
   }
+  // attachments as event fields: photos in img (as before), other files in files
+  const attFields = list => {
+    const img = (list || []).filter(i => i.u && !i.f).map(i => ({ u: i.u, n: i.n }));
+    const files = (list || []).filter(i => i.u && i.f).map(i => ({ u: i.u, n: i.n, s: i.s }));
+    return { img: img.length ? img : undefined, files: files.length ? files : undefined };
+  };
+  const attLocal = list => ({ imgLocal: (list || []).filter(i => !i.f).map(i => i.local), fileLocal: (list || []).filter(i => i.f).map(i => ({ n: i.n, s: i.s, u: i.u })) });
   const grow = () => { msg.style.height = "auto"; msg.style.height = Math.min(Math.max(msg.scrollHeight, 58), 220) + "px"; renderComposer(); };
   msg.addEventListener("input", grow);
   msg.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); say.requestSubmit(); } });
@@ -1453,11 +1482,11 @@ body[data-theme] .msg.note .ubub { background: none; }
       sendBtn.disabled = true; hint.dataset.sticky = "1"; hint.textContent = "Загружаю фото…";
       imgs = await uploadAtts(atts.splice(0)); delete hint.dataset.sticky; renderAtts();
       const partnerSide = !toClaude || (view === "chat" && c && !c.mine);
-      if (partnerSide && !text && !imgs.some(i => i.u)) { flash("Фото не загрузились на сервер канала, отправлять нечего."); renderComposer(); return; }
+      if (partnerSide && !text && !imgs.some(i => i.u)) { flash("Вложения не загрузились на сервер канала, отправлять нечего."); renderComposer(); return; }
     }
     if (toClaude) { msg.value = ""; grow(); sendToClaude(text, undefined, team, imgs); return; }
     sendBtn.disabled = true;
-    try { await publish({ event: "note", text: text.slice(0, 1000), chat: view === "chat" ? chatId || undefined : undefined, img: imgs ? imgs.filter(i => i.u).map(i => ({ u: i.u, n: i.n })) : undefined }, { imgLocal: imgs?.map(i => i.local) }); msg.value = ""; grow(); }
+    try { await publish({ event: "note", text: text.slice(0, 1000), chat: view === "chat" ? chatId || undefined : undefined, ...attFields(imgs) }, attLocal(imgs)); msg.value = ""; grow(); }
     catch { flash("Не отправилось. Проверьте сеть и настройки канала."); sendBtn.disabled = false; }
   });
 
@@ -1469,20 +1498,20 @@ body[data-theme] .msg.note .ubub { background: none; }
   }
   function sendToClaude(text, title, team, imgs) {
     const c = currentChat();
-    const img = imgs?.length ? imgs.filter(i => i.u).map(i => ({ u: i.u, n: i.n })) : undefined, imgLocal = imgs?.map(i => i.local);
+    const af = attFields(imgs), al = attLocal(imgs);
     // my own chat that is missing locally (deleted, or another install): take it back, Claude starts a fresh session
     if (view === "chat" && c && !c.mine && c.user === me) { myChats.unshift({ id: c.id, title: c.title, sid: "", t: c.t }); saveChats(); c.mine = true; }
     if (view === "chat" && c && !c.mine) {
-      if (imgs?.length && !img.length) flash("Фото не загрузились, Claude напарника их не увидит.");
-      publish({ event: "ask", chat: c.id, to: c.user, text: cut(text, 1000), team: team || undefined, img: img?.length ? img : undefined }, { full: text, imgLocal }); return;
+      if (imgs?.some(i => !i.u)) flash("Часть вложений не загрузилась, Claude напарника их не увидит.");
+      publish({ event: "ask", chat: c.id, to: c.user, text: cut(text, 1000), team: team || undefined, ...af }, { full: text, ...al }); return;
     }
     let chat = view === "chat" && c?.mine ? myChats.find(x => x.id === c.id) : null;
     if (!chat) { chat = { id: newId(), title: "Новый чат", sid: "", t: Date.now() }; myChats.unshift(chat); }
-    if (chat.title === "Новый чат") chat.title = cut(title || text || "Фото", 60);
+    if (chat.title === "Новый чат") chat.title = cut(title || text || (imgs?.[0]?.f ? imgs[0].n : "Фото"), 60);
     saveChats();
     if (view !== "chat" || chatId !== chat.id) show("chat", chat.id);
     const run = newId();
-    publish({ event: "prompt", chat: chat.id, chatTitle: chat.title, text: cut(text, 1000), run, team: team || undefined, img: img?.length ? img : undefined }, { full: text, imgLocal });
+    publish({ event: "prompt", chat: chat.id, chatTitle: chat.title, text: cut(text, 1000), run, team: team || undefined, ...af }, { full: text, ...al });
     enqueue(chat.id, { run, text, author: me, team: !!team, imgs: imgs || null });
   }
   function enqueue(chat, item) {
@@ -1511,7 +1540,7 @@ body[data-theme] .msg.note .ubub { background: none; }
         if ((e.event !== "ask" && !isReport) || e.user === me || !mine.has(e.chat) || queuedAsks.has(e.cid) || Date.now() - e.t > 12 * 3600e3) continue;
         if (events.some(x => x.event === "take" && x.ask === e.cid)) continue;
         if (isReport) enqueue(e.chat, { run: newId(), text: e.full || e.text, author: "Claude " + e.user, from: e.user, report: true, ask: e.cid });
-        else enqueue(e.chat, { run: newId(), text: e.full || e.text, author: e.user, ask: e.cid, team: !!e.team, imgs: Array.isArray(e.img) ? e.img.filter(i => i && i.u).map(i => ({ u: String(i.u), n: String(i.n || "photo.jpg") })) : null });
+        else enqueue(e.chat, { run: newId(), text: e.full || e.text, author: e.user, ask: e.cid, team: !!e.team, imgs: [...(Array.isArray(e.img) ? e.img : []).filter(i => i && i.u).map(i => ({ u: String(i.u), n: String(i.n || "photo.jpg") })), ...(Array.isArray(e.files) ? e.files : []).filter(i => i && i.u).map(i => ({ u: String(i.u), n: String(i.n || "file"), f: true }))] });
       }
     } finally { asking = false; }
     processDelegates();
@@ -1611,12 +1640,17 @@ ${FENCE}
   }
   async function photoNote(item, folder) {
     if (!item.imgs?.length || !native?.claude?.saveImage) return "";
-    const paths = [];
+    const photos = [], files = [], failed = [];
     for (const i of item.imgs) {
-      const r = await native.claude.saveImage(i.blob ? { folder, name: i.n, data: await toB64(i.blob) } : { folder, name: i.n, url: i.u, server: proj.server, token: proj.token });
-      if (r?.path) paths.push(r.path); else console.warn("[cowork] photo", r?.error);
+      const r = await native.claude.saveImage(i.blob ? { folder, name: i.n, data: await toB64(i.blob), file: !!i.f } : { folder, name: i.n, url: i.u, server: proj.server, token: proj.token, file: !!i.f });
+      if (!r?.path) { failed.push(i.n); console.warn("[cowork] attachment", r?.error); continue; }
+      if (i.f) files.push(r.path + (r.extracted ? ` (архив, распакован в ${r.extracted})` : "")); else photos.push(r.path);
     }
-    return paths.length ? `\n\nК сообщению приложены фото, посмотри их инструментом Read:\n${paths.join("\n")}` : "\n\n(К сообщению было приложено фото, но его не удалось получить.)";
+    let note = "";
+    if (photos.length) note += `\n\nК сообщению приложены фото, посмотри их инструментом Read:\n${photos.join("\n")}`;
+    if (files.length) note += `\n\nК сообщению приложены файлы:\n${files.join("\n")}`;
+    if (failed.length) note += `\n\n(Не удалось получить вложения: ${failed.join(", ")}.)`;
+    return note;
   }
   async function runClaude(chat, item) {
     const run = { id: item.run, chat: chat.id, pid: proj.id, live: "", sentLive: "", folder: proj.folder };
@@ -1626,7 +1660,7 @@ ${FENCE}
     let prompt = `${intro}${item.author}: ${item.text}`;
     if (item.team && mate) { run.team = true; run.mate = mate; prompt = `${intro}${TEAM_LEAD(mate)}\n\n${item.author}: ${item.text}`; }
     if (item.report) { run.team = true; run.mate = mate; prompt = `${intro}Отчёт второго Claude (компьютер ${item.from}):\n${item.text}\n\nПродолжай как ведущий: подтяни его ветку, слей части, проверь работу и коротко опиши людям итог. Если второму Claude нужно поручить ещё что-то, снова используй блок cowork-delegate.`; }
-    if (!item.text && item.imgs?.length) prompt = prompt.replace(/: $/, ": (фото без подписи)");
+    if (!item.text && item.imgs?.length) prompt = prompt.replace(/: $/, item.imgs.some(i => i.f) ? ": (вложение без подписи)" : ": (фото без подписи)");
     prompt += await photoNote(item, proj.folder);
     if (runs.get(chat.id) !== run) return;
     native.claude.run({ id: run.id, prompt, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, team: !!run.team, self: proj.kind === "self" });

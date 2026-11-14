@@ -239,10 +239,10 @@ ipcMain.handle("claude:pick-bin", async () => {
 
 // фото для Claude: кладём в <проект>/.cowork/images (папка скрыта от git через .git/info/exclude).
 // Фото напарника скачиваем только с сервера канала проекта.
-ipcMain.handle("claude:save-image", async (_e, { folder, name, data, url, server, token }) => {
+ipcMain.handle("claude:save-image", async (_e, { folder, name, data, url, server, token, file }) => {
   try {
     if (!folder || !fs.statSync(folder).isDirectory()) throw new Error("нет папки проекта");
-    const dir = path.join(folder, ".cowork", "images"); fs.mkdirSync(dir, { recursive: true });
+    const dir = path.join(folder, ".cowork", file ? "files" : "images"); fs.mkdirSync(dir, { recursive: true });
     try {
       const ex = path.join(folder, ".git", "info", "exclude");
       if (fs.existsSync(path.join(folder, ".git"))) {
@@ -259,11 +259,23 @@ ipcMain.handle("claude:save-image", async (_e, { folder, name, data, url, server
       if (!r.ok) throw new Error("фото недоступно, HTTP " + r.status);
       buf = Buffer.from(await r.arrayBuffer());
     }
-    if (!buf || !buf.length || buf.length > 20e6) throw new Error("пустое или слишком большое фото");
-    const safe = String(name || "photo.jpg").replace(/[^\w.-]/g, "_").slice(-60);
+    if (!buf || !buf.length || buf.length > 30e6) throw new Error("пустой или слишком большой файл");
+    const safe = String(name || "file").replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/^\.+/, "").slice(-80) || "file";
     const f = path.join(dir, Date.now().toString(36) + "-" + safe);
     fs.writeFileSync(f, buf);
-    return { path: f };
+    // архив распаковываем рядом, чтобы Claude сразу видел содержимое (tar на Windows 10+ умеет и zip)
+    let extracted = "";
+    if (file && /\.(zip|tar|tgz|tar\.gz|tar\.bz2|tar\.xz)$/i.test(safe)) {
+      const out = f.replace(/\.(zip|tar|tgz|tar\.gz|tar\.bz2|tar\.xz)$/i, "") + "_files";
+      fs.mkdirSync(out, { recursive: true });
+      const cp = require("child_process"), opt = { windowsHide: true, timeout: 120000, stdio: "ignore" };
+      try {
+        if (!isWin && /\.zip$/i.test(safe)) cp.execFileSync("unzip", ["-q", "-o", f, "-d", out], opt);
+        else cp.execFileSync("tar", ["-xf", f, "-C", out], opt);
+        extracted = out;
+      } catch (e) { log.warn("extract failed", e?.message); }
+    }
+    return { path: f, extracted };
   } catch (e) { return { error: String(e.message || e) }; }
 });
 
