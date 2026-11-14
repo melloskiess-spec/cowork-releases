@@ -912,6 +912,7 @@ body.collapsed .main { margin-left: 10px; }
       flushSteps(!!group.live && !group.live.trim());
       if (group.live) body += (group.live.trim() ? replyHtml(group.live, "streaming") : "") + '<span class="typing" aria-label="Claude работает"><i></i><i></i><i></i></span>';
       if (status) body += `<div class="ai-status">${esc(status)}</div>`;
+      if (!body) { group = null; return; }
       const fresh = !shown.has(group.key); shown.add(group.key);
       out.push(`<div class="msg ai ${fresh ? "fresh" : ""}"><span class="aiic">${CLAUDE_LOGO}</span><div class="aibody"><div class="meta"><b class="ainame">${CLAUDE_LOGO}Claude</b>${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</div>${body}</div></div>`);
       group = null;
@@ -922,10 +923,11 @@ body.collapsed .main { margin-left: 10px; }
         const isNote = e.event === "note", key = "h" + (e.cid || e.seq), mine = e.user === me;
         const fresh = !shown.has(key); shown.add(key);
         const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди: Claude закончит текущее и возьмётся" : "ждёт компьютер " + esc(e.to || c?.user || "") + ", там должен быть открыт Cowork"}</div>` : "";
-        out.push(`<div class="msg user ${mine ? "mine" : "partner"} ${isNote ? "note" : ""} ${fresh ? "fresh" : ""}" style="--pc:${colorOf(e.user)}"><div class="meta">${isNote ? "<i>только напарнику</i> · " : ""}<b>${mine ? "Вы" : esc(e.user)}</b>${hhmm(e.t)}${av(e.user, false)}</div><div class="ubub">${esc(e.full || e.text)}</div>${waiting}</div>`);
+        out.push(`<div class="msg user ${mine ? "mine" : "partner"} ${isNote ? "note" : ""} ${fresh ? "fresh" : ""}" style="--pc:${colorOf(e.user)}"><div class="meta">${isNote ? "<i>только напарнику</i> · " : ""}<b>${mine ? "Вы" : esc(e.user)}</b>${hhmm(e.t)}${!c && chatOf(e) ? ` · <a href="#" data-goto-chat="${esc(chatOf(e))}" style="color:var(--c3)">в чат</a>` : ""}${av(e.user, false)}</div><div class="ubub">${esc(e.full || e.text)}</div>${waiting}</div>`);
         continue;
       }
-      if (!group) group = { key: "c" + (e.cid || e.seq), t: e.t, items: [], host: c && !c.mine ? e.user : "" };
+      if (group && !c && group.user !== e.user) flushGroup();   // "all events": one Claude block per computer
+      if (!group) group = { key: "c" + (e.cid || e.seq), t: e.t, items: [], user: e.user, host: c ? (!c.mine ? e.user : "") : (e.user !== me ? e.user : "") };
       const prev = group.items.at(-1);
       if (!(e.event === "edit" && prev && prev.event === "edit" && prev.file === e.file)) group.items.push(e);
     }
@@ -957,7 +959,7 @@ body.collapsed .main { margin-left: 10px; }
     } else {
       $("[data-title]").innerHTML = VIEWS[view][0] + '<span class="dot"></span>';
       $("[data-subtitle]").textContent = VIEWS[view][1];
-      if (view === "feed") renderFeed(events, "Hello", "Здесь появится работа вас обоих: чаты с Claude, правки файлов, коммиты и ваши сообщения друг другу.");
+      if (view === "feed") renderChat(events, null, "Hello", "Здесь появится работа вас обоих: чаты с Claude, правки файлов, коммиты и ваши сообщения друг другу.", false);
     }
 
     const turnsAll = buildTurns(events);
