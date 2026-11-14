@@ -108,6 +108,34 @@ const runs = new Map();
 const isWin = process.platform === "win32";
 const PERMS = new Set(["acceptEdits", "bypassPermissions", "plan"]);
 
+// Claude Code часто стоит там, куда не смотрит PATH приложения: установщик кладёт его в ~/.local/bin,
+// npm в %APPDATA%\npm, а PATH, изменённый после входа в Windows, Cowork не видит до перезагрузки.
+// Поэтому собираем PATH заново: свежие значения из реестра плюс известные папки установки.
+function claudePath() {
+  const home = require("os").homedir(), sep = isWin ? ";" : ":";
+  const parts = (process.env.PATH || process.env.Path || "").split(sep);
+  if (isWin) {
+    for (const key of ["HKCU\\Environment", "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"]) {
+      try {
+        const out = require("child_process").execFileSync("reg", ["query", key, "/v", "Path"], { encoding: "utf8", windowsHide: true, timeout: 4000 });
+        const m = out.match(/Path\s+REG_(?:EXPAND_)?SZ\s+(.+)/i);
+        if (m) parts.push(...m[1].trim().replace(/%([^%]+)%/g, (a, v) => process.env[v] || a).split(";"));
+      } catch {}
+    }
+    const ad = process.env.APPDATA || path.join(home, "AppData", "Roaming"), lad = process.env.LOCALAPPDATA || path.join(home, "AppData", "Local");
+    parts.push(path.join(home, ".local", "bin"), path.join(ad, "npm"), path.join(home, ".claude", "local"),
+      path.join(lad, "Programs", "claude"), path.join(lad, "AnthropicClaude"), path.join(process.env.ProgramFiles || "C:\\Program Files", "nodejs"));
+  } else {
+    parts.push(path.join(home, ".local", "bin"), path.join(home, ".claude", "local"), "/opt/homebrew/bin", "/usr/local/bin");
+  }
+  return [...new Set(parts.map(x => x.trim()).filter(Boolean))].join(sep);
+}
+let CLAUDE_ENV = null;
+const claudeEnv = (extra = {}) => {
+  if (!CLAUDE_ENV) { const P = claudePath(); CLAUDE_ENV = { ...process.env, PATH: P }; if (isWin) CLAUDE_ENV.Path = P; }
+  return { ...CLAUDE_ENV, ...extra };
+};
+
 function readEnvFile(dir) {
   const out = {};
   for (const f of ["cowork.env", "cowork.local.env"]) {
@@ -125,7 +153,8 @@ ipcMain.handle("claude:check", () => new Promise(resolve => {
   let out = "", done = false;
   const finish = v => { if (!done) { done = true; resolve(v); } };
   try {
-    const p = spawn("claude", ["--version"], { shell: isWin, windowsHide: true });
+    CLAUDE_ENV = null;   // каждая проверка заново читает PATH: вдруг Claude Code только что установили
+    const p = spawn("claude", ["--version"], { shell: isWin, windowsHide: true, env: claudeEnv() });
     p.stdout.on("data", d => out += d);
     p.on("error", () => finish({ ok: false }));
     p.on("close", code => finish(code === 0 ? { ok: true, version: out.trim().split(/\s+/)[0] } : { ok: false }));
@@ -160,7 +189,7 @@ ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self }) => {
   if (self) args.push("--allowedTools", ...["Bash(git:*)", "Bash(npm:*)", "Bash(node:*)"].map(a => isWin ? `"${a}"` : a));
   if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
   // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
-  const env = { ...process.env, COWORK_ENABLED: "0" };
+  const env = claudeEnv({ COWORK_ENABLED: "0" });
   let p;
   try { p = spawn("claude", args, { cwd, env, shell: isWin, windowsHide: true }); }
   catch (err) { return send({ done: true, error: String(err.message || err) }); }
