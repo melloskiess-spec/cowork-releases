@@ -389,6 +389,10 @@ body.collapsed .main { margin-left: 10px; }
 .tools .steps li { font-size: 13px; padding: 6px 0; }
 .ai-status { font-size: 12.5px; color: var(--c6); }
 .pending { margin: 6px 6px 0; }
+.msg.handoff .hbox { padding: 10px 15px 4px; border: 1.5px dashed color-mix(in srgb, var(--c3) 45%, transparent); border-radius: 16px; background: var(--c3s); font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.msg.handoff .meta { margin: 0 0 4px; } .msg.handoff .meta i { font-style: normal; color: var(--c3); font-weight: 600; }
+.msg.handoff .hbox p { margin: 0 0 6px; }
+.aiic.sm { width: 20px; height: 20px; border-radius: 6px; } .aiic.sm svg { width: 12px; }
 
 .greet { display: grid; place-content: center; justify-items: center; gap: 26px; min-height: 100%; padding: 30px 10px; text-align: center; }
 .greet h2 { margin: 0; font: 800 clamp(34px, 4.4vw, 52px)/1 var(--f1); letter-spacing: -0.045em; }
@@ -489,7 +493,7 @@ body.collapsed .main { margin-left: 10px; }
       <form data-say class="box">
         <textarea rows="2" name="message" placeholder="Написать Claude…" aria-label="Сообщение"></textarea>
         <div class="bar">
-          <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
+          <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="team" aria-pressed="false" title="Ваш Claude и Claude напарника делят задачу">Оба Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
           <span class="hint" data-hint></span>
           <button class="send" type="submit" disabled aria-label="Отправить"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
         </div>
@@ -632,7 +636,7 @@ body.collapsed .main { margin-left: 10px; }
 
   // ---------- state ----------
   const people = new Map(), seen = new Set(), seenCid = new Set(), shown = new Set(), runs = new Map(), remoteLive = new Map(), queues = new Map(), queuedAsks = new Set();
-  const HUMAN = new Set(["prompt", "ask", "note"]), HIDDEN = new Set(["take", "live", "stop"]);
+  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop"]);
   let events = [], seq = 0, es = null, conn = "off", view = "chat", chatId = null, target = store.get("cw.target") || "claude", ccOk = false, shareCommands = false, repoUrl = "";
 
   const chatOf = e => e.chat || (e.session ? "s-" + e.user + "-" + e.session : null);
@@ -757,7 +761,8 @@ body.collapsed .main { margin-left: 10px; }
     flushP(); flushL();
     return out.join("");
   }
-  const replyHtml = (text, cls = "") => `<div class="reply ${cls}"><div class="who">${cls === "err" ? "Ошибка" : "Claude"}</div>${md(text)}</div>`;
+  const stripBlocks = t => String(t || "").replace(/```cowork-(?:delegate|report)[\s\S]*?(?:```|$)/g, "").trim();
+  const replyHtml = (text, cls = "") => (text = stripBlocks(text)) ? `<div class="reply ${cls}"><div class="who">${cls === "err" ? "Ошибка" : "Claude"}</div>${md(text)}</div>` : "";
 
   // ---------- render ----------
   function renderStatus() {
@@ -918,22 +923,42 @@ body.collapsed .main { margin-left: 10px; }
       out.push(`<div class="msg ai ${fresh ? "fresh" : ""}"><span class="aiic">${CLAUDE_LOGO}</span><div class="aibody"><div class="meta"><b class="ainame">${CLAUDE_LOGO}Claude</b>${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</div>${body}</div></div>`);
       group = null;
     };
+    const seg = new Map();
+    const flushSeg = () => { for (const g of seg.values()) { group = g; flushGroup(); } seg.clear(); };
+    const idleRuns = new Set(list.filter(e => e.event === "idle" && e.run).map(e => e.run));
+    const runLive = id => {
+      const local = [...runs.values()].find(r => r.id === id); if (local) return local.live || " ";
+      const last = list.filter(e => e.run === id).at(-1);
+      return last && Date.now() - last.t < 10 * 60e3 ? (remoteLive.get(id)?.text || " ") : null;
+    };
+    const claudeOf = n => n === me ? "ваш Claude" : "Claude " + n;
     for (const e of items) {
+      if (e.event === "delegate" || e.event === "report") {
+        flushSeg();
+        const key = "h" + (e.cid || e.seq), fresh = !shown.has(key); shown.add(key);
+        const lbl = `${claudeOf(e.user)} → ${claudeOf(e.to || "")}`.replace(/^в/, "В");
+        const waiting = !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди" : "ждёт компьютер " + esc(e.to || "") + ", там должен быть открыт Cowork"}</div>` : "";
+        out.push(`<div class="msg handoff ${fresh ? "fresh" : ""}"><div class="hbox"><div class="meta"><span class="aiic sm">${CLAUDE_LOGO}</span><b>${esc(lbl)}</b>${e.event === "report" ? "<i>отчёт</i>" : "<i>поручение</i>"}${hhmm(e.t)}</div>${md(e.full || e.text)}</div>${waiting}</div>`);
+        continue;
+      }
       if (HUMAN.has(e.event)) {
-        flushGroup();
+        flushSeg();
         const isNote = e.event === "note", key = "h" + (e.cid || e.seq), mine = e.user === me;
         const fresh = !shown.has(key); shown.add(key);
         const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди: Claude закончит текущее и возьмётся" : "ждёт компьютер " + esc(e.to || c?.user || "") + ", там должен быть открыт Cowork"}</div>` : "";
         out.push(`<div class="msg user ${mine ? "mine" : "partner"} ${isNote ? "note" : ""} ${fresh ? "fresh" : ""}" style="--pc:${colorOf(e.user)}"><div class="meta">${isNote ? "<i>только напарнику</i> · " : ""}<b>${mine ? "Вы" : esc(e.user)}</b>${hhmm(e.t)}${!c && chatOf(e) ? ` · <a href="#" data-goto-chat="${esc(chatOf(e))}" style="color:var(--c3)">в чат</a>` : ""}${av(e.user, false)}</div><div class="ubub">${esc(e.full || e.text)}</div>${waiting}</div>`);
         continue;
       }
-      if (group && !c && group.user !== e.user) flushGroup();   // "all events": one Claude block per computer
-      if (!group) group = { key: "c" + (e.cid || e.seq), t: e.t, items: [], user: e.user, host: c ? (!c.mine ? e.user : "") : (e.user !== me ? e.user : "") };
-      const prev = group.items.at(-1);
-      if (!(e.event === "edit" && prev && prev.event === "edit" && prev.file === e.file)) group.items.push(e);
+      const gk = (e.run || "") + "|" + e.user;
+      let g = seg.get(gk);
+      if (!g) { g = { key: "c" + (e.cid || e.seq), t: e.t, items: [], user: e.user, run: e.run, host: e.user !== me ? e.user : "" }; seg.set(gk, g); }
+      const prev = g.items.at(-1);
+      if (!(e.event === "edit" && prev && prev.event === "edit" && prev.file === e.file)) g.items.push(e);
     }
-    if (run) { if (!group) group = { key: "c-live-" + run.id, t: Date.now(), items: [], host: run.user !== me ? run.user : "" }; group.live = run.live || " "; }
-    flushGroup();
+    for (const g of seg.values()) if (g.run && !idleRuns.has(g.run)) { const l = runLive(g.run); if (l != null) g.live = l; }
+    if (run && ![...seg.values()].some(g => g.run === run.id)) seg.set("live", { key: "c-live-" + run.id, t: Date.now(), items: [], run: run.id, host: run.user !== me ? run.user : "", live: run.live || " " });
+    for (const r of runs.values()) if (r.helper && (!c || r.chat === c.id) && ![...seg.values()].some(g => g.run === r.id)) seg.set("h-" + r.id, { key: "c-live-" + r.id, t: Date.now(), items: [], run: r.id, host: "", live: r.live || " " });
+    flushSeg();
     $("[data-feed]").innerHTML = `<div class="chatcol">${out.join("")}</div>`;
     if (atBottom) requestAnimationFrame(() => { view$.scrollTop = view$.scrollHeight; });
   }
@@ -1183,7 +1208,10 @@ body.collapsed .main { margin-left: 10px; }
     const c = currentChat(), inChat = view === "chat";
     const partnerChat = inChat && c && !c.mine;
     const claudeOk = partnerChat ? !!proj : canClaude();
-    const t = target === "claude" && claudeOk ? "claude" : "partner";
+    const mate = partnerName(c);
+    const t = !claudeOk ? "partner" : target === "team" ? (mate ? "team" : "claude") : target === "claude" ? "claude" : "partner";
+    $('[data-target="team"]').hidden = !mate || (!partnerChat && !canClaude());
+    $('[data-target="team"]').title = mate ? `Ваш Claude и Claude ${mate} делят задачу: каждый делает свою часть на своём компьютере` : "";
     const run = inChat && chatId ? activeRun(chatId) : null;
     $$("[data-target]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.target === t)));
     const cb = $('[data-target="claude"]');
@@ -1191,16 +1219,16 @@ body.collapsed .main { margin-left: 10px; }
     $(".target").hidden = !native?.claude && !partnerChat;
     const note = $("[data-owner-note]");
     note.hidden = true;
-    msg.placeholder = t === "claude" ? (run ? "Claude работает. Можно написать ещё, сообщение встанет в очередь…" : view === "feed" ? "Задание для Claude, откроется новый чат…" : "Написать Claude…") : "Написать напарнику, Claude не увидит…";
-    const stop = t === "claude" && !!run && !msg.value.trim();
+    msg.placeholder = t === "team" ? "Задача для обоих Claude: ведущий разделит её на части…" : t === "claude" ? (run ? "Claude работает. Можно написать ещё, сообщение встанет в очередь…" : view === "feed" ? "Задание для Claude, откроется новый чат…" : "Написать Claude…") : "Написать напарнику, Claude не увидит…";
+    const stop = t !== "partner" && !!run && !msg.value.trim();
     sendBtn.classList.toggle("stop", stop);
     sendBtn.innerHTML = stop ? STOP_ICON : SEND_ICON;
     sendBtn.setAttribute("aria-label", stop ? "Остановить Claude" : "Отправить");
     sendBtn.disabled = stop ? false : !msg.value.trim();
-    if (!hint.dataset.sticky) hint.textContent = t === "claude" ? (partnerChat ? `Enter, отправить · выполнит компьютер ${c.user}, ответ увидите оба` : "Enter, отправить · напарник видит этот чат и может писать сюда же") : "Enter, отправить · это видит только напарник, не Claude";
+    if (!hint.dataset.sticky) hint.textContent = t === "team" ? `Enter · ведущий Claude (${partnerChat ? c.user : "ваш"}) разделит задачу с Claude ${partnerChat ? "вашим" : mate}` : t === "claude" ? (partnerChat ? `Enter, отправить · выполнит компьютер ${c.user}, ответ увидите оба` : "Enter, отправить · напарник видит этот чат и может писать сюда же") : "Enter, отправить · это видит только напарник, не Claude";
   }
   $$("[data-target]").forEach(b => b.addEventListener("click", () => {
-    if (b.dataset.target === "claude" && !canClaude()) { if (native?.claude) openSetup(false); return; }
+    if (b.dataset.target !== "partner" && !canClaude() && !(view === "chat" && currentChat() && !currentChat().mine)) { if (native?.claude) openSetup(false); return; }
     target = b.dataset.target; store.set("cw.target", target); renderComposer(); msg.focus();
   }));
   function flash(text) { hint.dataset.sticky = "1"; hint.textContent = text; clearTimeout(flash.t); flash.t = setTimeout(() => { delete hint.dataset.sticky; renderComposer(); }, 6000); }
@@ -1209,29 +1237,35 @@ body.collapsed .main { margin-left: 10px; }
   msg.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); say.requestSubmit(); } });
   say.addEventListener("submit", async ev => {
     ev.preventDefault();
-    const c = currentChat(), toClaude = $('[data-target="claude"]').getAttribute("aria-pressed") === "true";
+    const c = currentChat(), team = $('[data-target="team"]').getAttribute("aria-pressed") === "true", toClaude = team || $('[data-target="claude"]').getAttribute("aria-pressed") === "true";
     const run = view === "chat" && chatId ? activeRun(chatId) : null;
     const text = msg.value.trim();
     if (toClaude && run && !text) { if (run.local) native.claude.stop(run.id); else publish({ event: "stop", chat: chatId, run: run.id }); return; }
     if (!text) return;
     if (!me || !proj) { openSetup(!proj); return; }
-    if (toClaude) { msg.value = ""; grow(); sendToClaude(text); return; }
+    if (toClaude) { msg.value = ""; grow(); sendToClaude(text, undefined, team); return; }
     sendBtn.disabled = true;
     try { await publish({ event: "note", text: text.slice(0, 1000), chat: view === "chat" ? chatId || undefined : undefined }); msg.value = ""; grow(); }
     catch { flash("Не отправилось. Проверьте сеть и настройки канала."); sendBtn.disabled = false; }
   });
 
-  function sendToClaude(text, title) {
+  // the other person in the project: the chat's owner, or whoever was seen last
+  function partnerName(c) {
+    if (c && !c.mine) return c.user;
+    for (let i = events.length - 1; i >= 0; i--) if (events[i].user && events[i].user !== me) return events[i].user;
+    return "";
+  }
+  function sendToClaude(text, title, team) {
     const c = currentChat();
-    if (view === "chat" && c && !c.mine) { publish({ event: "ask", chat: c.id, to: c.user, text: cut(text, 1000) }, { full: text }); return; }
+    if (view === "chat" && c && !c.mine) { publish({ event: "ask", chat: c.id, to: c.user, text: cut(text, 1000), team: team || undefined }, { full: text }); return; }
     let chat = view === "chat" && c?.mine ? myChats.find(x => x.id === c.id) : null;
     if (!chat) { chat = { id: newId(), title: "Новый чат", sid: "", t: Date.now() }; myChats.unshift(chat); }
     if (chat.title === "Новый чат") chat.title = cut(title || text, 60);
     saveChats();
     if (view !== "chat" || chatId !== chat.id) show("chat", chat.id);
     const run = newId();
-    publish({ event: "prompt", chat: chat.id, chatTitle: chat.title, text: cut(text, 1000), run }, { full: text });
-    enqueue(chat.id, { run, text, author: me });
+    publish({ event: "prompt", chat: chat.id, chatTitle: chat.title, text: cut(text, 1000), run, team: team || undefined }, { full: text });
+    enqueue(chat.id, { run, text, author: me, team: !!team });
   }
   function enqueue(chat, item) {
     const q = queues.get(chat) || []; q.push({ ...item, pid: proj.id }); queues.set(chat, q);
@@ -1255,11 +1289,55 @@ body.collapsed .main { margin-left: 10px; }
     try {
       const mine = new Set(myChats.map(c => c.id));
       for (const e of events) {
-        if (e.event !== "ask" || e.user === me || !mine.has(e.chat) || queuedAsks.has(e.cid) || Date.now() - e.t > 12 * 3600e3) continue;
+        const isReport = e.event === "report" && e.to === me;
+        if ((e.event !== "ask" && !isReport) || e.user === me || !mine.has(e.chat) || queuedAsks.has(e.cid) || Date.now() - e.t > 12 * 3600e3) continue;
         if (events.some(x => x.event === "take" && x.ask === e.cid)) continue;
-        enqueue(e.chat, { run: newId(), text: e.full || e.text, author: e.user, ask: e.cid });
+        if (isReport) enqueue(e.chat, { run: newId(), text: e.full || e.text, author: "Claude " + e.user, from: e.user, report: true, ask: e.cid });
+        else enqueue(e.chat, { run: newId(), text: e.full || e.text, author: e.user, ask: e.cid, team: !!e.team });
       }
     } finally { asking = false; }
+    processDelegates();
+  }
+
+  // ---------- two Claudes: the lead hands a part to the partner's Claude, which reports back ----------
+  const teamSids = () => { try { return JSON.parse(store.get("cw.teamsid." + proj.id) || "{}"); } catch { return {}; } };
+  const saveTeamSid = (chat, sid) => { const m = teamSids(); if (sid) m[chat] = sid; else delete m[chat]; store.set("cw.teamsid." + proj.id, JSON.stringify(m)); };
+  const FENCE = "```";
+  const TEAM_LEAD = (mate) => `Режим «Оба Claude». В этом проекте два Claude Code: ты, ведущий, на компьютере ${me}, и второй Claude на компьютере ${mate} со своей копией этого же git-репозитория. Ваши ответы видят оба человека.
+Как работать:
+1. Коротко изучи задачу и составь план. Раздели работу на две части так, чтобы вы не правили одни и те же файлы.
+2. Часть второго Claude опиши в своём ответе блоком
+${FENCE}cowork-delegate
+задание: что сделать, какие файлы можно трогать и какие нельзя, в какой ветке git работать, что запушить
+${FENCE}
+Блок уходит второму Claude, как только ты его напишешь, поэтому напиши его до начала своей части. Задание должно быть понятно без этого разговора.
+3. Делай свою часть в своей ветке, закоммить и запушь её.
+4. Когда второй Claude закончит, его отчёт придёт тебе отдельным сообщением. Тогда подтяни его ветку, слей части, проверь, что всё работает, и коротко опиши итог людям.
+Если задача слишком маленькая, чтобы делить, сделай её сам и так и скажи.`;
+  const TEAM_HELPER = (lead) => `Режим «Оба Claude». Ты второй Claude Code в паре и работаешь на компьютере ${me} в своей копии git-репозитория. Ведущий Claude на компьютере ${lead} разделил задачу и поручил тебе часть. Ваши ответы видят оба человека.
+Перед работой сделай git fetch и перейди в ветку, которую назвал ведущий (если не назвал, создай свою). Не трогай файлы его части. Закончив, закоммить и запушь ветку.
+В конце обязательно напиши отчёт для ведущего блоком
+${FENCE}cowork-report
+что сделано, ветка, коммиты, что не получилось или что нужно от ведущего
+${FENCE}
+
+`;
+  const blocks = (text, kind) => [...String(text || "").matchAll(new RegExp(FENCE + "cowork-" + kind + "[^\\n]*\\n([\\s\\S]*?)" + FENCE, "g"))].map(m => m[1].trim()).filter(Boolean);
+  function processDelegates() {
+    if (!canClaude() || !proj) return;
+    for (const e of events) {
+      if (e.event !== "delegate" || e.to !== me || e.user === me || runs.has(e.chat) || queuedAsks.has(e.cid) || Date.now() - e.t > 6 * 3600e3) continue;
+      if (events.some(x => x.event === "take" && x.ask === e.cid)) continue;
+      runHelper(e);
+    }
+  }
+  function runHelper(e) {
+    const run = { id: newId(), chat: e.chat, pid: proj.id, live: "", sentLive: "", folder: proj.folder, helper: true, lead: e.user, texts: [] };
+    runs.set(e.chat, run);
+    publish({ event: "take", chat: e.chat, ask: e.cid, run: run.id });
+    const sid = teamSids()[e.chat] || "";
+    native.claude.run({ id: run.id, prompt: `${sid ? "" : TEAM_HELPER(e.user)}Задание от ведущего Claude (компьютер ${e.user}):\n${e.full || e.text}`, cwd: proj.folder, resume: sid, perm: proj.perm, self: proj.kind === "self" });
+    render();
   }
 
   // ---------- the "Cowork" tab: change the app itself ----------
@@ -1317,7 +1395,11 @@ body.collapsed .main { margin-left: 10px; }
     const run = { id: item.run, chat: chat.id, pid: proj.id, live: "", sentLive: "", folder: proj.folder };
     runs.set(chat.id, run);
     const intro = chat.sid ? "" : "Это общий чат в приложении Cowork: с тобой одновременно работают несколько человек, каждое сообщение подписано именем автора. Отвечай всем в одном разговоре.\n\n";
-    native.claude.run({ id: run.id, prompt: `${intro}${item.author}: ${item.text}`, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, self: proj.kind === "self" });
+    const mate = item.from || (item.author !== me ? item.author : partnerName(null));
+    let prompt = `${intro}${item.author}: ${item.text}`;
+    if (item.team && mate) { run.team = true; run.mate = mate; prompt = `${intro}${TEAM_LEAD(mate)}\n\n${item.author}: ${item.text}`; }
+    if (item.report) { run.team = true; run.mate = mate; prompt = `${intro}Отчёт второго Claude (компьютер ${item.from}):\n${item.text}\n\nПродолжай как ведущий: подтяни его ветку, слей части, проверь работу и коротко опиши людям итог. Если второму Claude нужно поручить ещё что-то, снова используй блок cowork-delegate.`; }
+    native.claude.run({ id: run.id, prompt, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, self: proj.kind === "self" });
     render();
   }
   let liveFrame = 0;
@@ -1326,7 +1408,7 @@ body.collapsed .main { margin-left: 10px; }
     const here = proj?.id === run.pid;
     const chatRec = () => here ? myChats.find(c => c.id === run.chat) : null;
     if (m) {
-      if (m.type === "system" && m.subtype === "init" && m.session_id) { const c = chatRec(); if (c) { c.sid = m.session_id; saveChats(); } }
+      if (m.type === "system" && m.subtype === "init" && m.session_id) { if (run.helper) { if (here) saveTeamSid(run.chat, m.session_id); } else { const c = chatRec(); if (c) { c.sid = m.session_id; saveChats(); } } }
       else if (!here) return;
       else if (m.type === "stream_event" && !m.parent_tool_use_id) {
         const ev = m.event || {};
@@ -1334,7 +1416,16 @@ body.collapsed .main { margin-left: 10px; }
       }
       else if (m.type === "assistant" && !m.parent_tool_use_id) {
         for (const b of m.message?.content || []) {
-          if (b.type === "text" && b.text.trim()) { run.live = ""; run.sentLive = ""; safe(publish({ event: "reply", chat: run.chat, run: run.id, text: cut(b.text, 1400) }, { full: b.text })); }
+          if (b.type === "text" && b.text.trim()) {
+            run.live = ""; run.sentLive = "";
+            safe(publish({ event: "reply", chat: run.chat, run: run.id, text: cut(b.text, 1400) }, { full: b.text }));
+            if (run.helper) run.texts.push(b.text);
+            if (run.team && run.mate) for (const task of blocks(b.text, "delegate")) {
+              const recent = events.filter(x => x.event === "delegate" && x.chat === run.chat && Date.now() - x.t < 2 * 3600e3).length;
+              if (recent >= 6) { flash("Claude слишком часто передаёт задания друг другу, остановил передачу."); break; }
+              safe(publish({ event: "delegate", chat: run.chat, run: run.id, to: run.mate, text: cut(task, 1500) }, { full: task }));
+            }
+          }
           else if (b.type === "tool_use") onTool(run, b.name, b.input);
         }
       }
@@ -1346,11 +1437,16 @@ body.collapsed .main { margin-left: 10px; }
       const err = run.err || error;
       if (here) {
         if (err && !stopped) {
-          if (/No conversation found/i.test(err)) { const c = chatRec(); if (c) { c.sid = ""; saveChats(); } }
+          if (/No conversation found/i.test(err)) { if (run.helper) saveTeamSid(run.chat, ""); else { const c = chatRec(); if (c) { c.sid = ""; saveChats(); } } }
           safe(publish({ event: "reply", chat: run.chat, run: run.id, err: true, text: cut(err, 600) }));
         }
         safe(publish({ event: "idle", chat: run.chat, run: run.id, text: stopped ? "Остановлено" : err ? "Claude не смог закончить" : "Готово" }));
-        startNext(run.chat);
+        if (run.helper) {
+          const all = run.texts.join("\n\n"), rb = blocks(all, "report");
+          const report = rb.length ? rb.join("\n\n") : stopped ? "Остановлено человеком, часть не доделана." : err ? "Не смог закончить: " + cut(err, 400) : cut(stripBlocks(run.texts.at(-1) || "Готово."), 1500);
+          safe(publish({ event: "report", chat: run.chat, run: run.id, to: run.lead, text: cut(report, 1500) }, { full: report }));
+          processDelegates();
+        } else startNext(run.chat);
       }
       render();
     }
