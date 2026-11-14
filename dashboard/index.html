@@ -11,7 +11,7 @@
 <style>
 :root {
   --c1: #0d0c11; --c2: #ffffff; --c3: #6c3cff; --c4: #efeef4; --c5: #aaa7b4; --c6: #5d5a67; --c7: #1f1d26;
-  --c8: #16151c; --line-d: #26242e; --line-l: #e4e2ea; --ok: #2fd388; --wait: #ffb547; --warn: #ff7a2f;
+  --c8: #16151c; --c3d: #5528e6; --c3s: #f1ecff; --line-d: #26242e; --line-l: #e4e2ea; --ok: #2fd388; --wait: #ffb547; --warn: #ff7a2f;
   --f1: "Gabarito", "Onest", "Arial Black", Arial, sans-serif;
   --f2: "Onest", Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -31,7 +31,7 @@ button, input, textarea { font: inherit; color: inherit; }
 /* buttons from the template: dot + fill that grows from the dot on hover */
 .btn { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 20px 0 16px; overflow: hidden; border: 0; border-radius: var(--r2); background: var(--c3); color: #fff; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .btn::before { content: ""; width: 7px; height: 7px; flex: none; border-radius: var(--r2); background: currentColor; }
-.btn::after { content: ""; position: absolute; z-index: -1; left: 19px; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: var(--r2); background: var(--c1); transform: scale(0); transition: transform .55s var(--ease); }
+.btn::after { content: ""; position: absolute; z-index: -1; left: 19px; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: var(--r2); background: var(--c3d); transform: scale(0); transition: transform .55s var(--ease); }
 .btn:hover::after { transform: scale(60); }
 .btn--ghost { background: transparent; color: var(--c2); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c2) 30%, transparent); }
 .btn--ghost::before { background: var(--c3); }
@@ -217,7 +217,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .send.stop { background: var(--c2); color: var(--c1); }
 .send.stop svg { fill: currentColor; stroke: none; }
 .top-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1.5px solid var(--line-l); border-radius: var(--r2); background: none; color: var(--c1); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: border-color .25s, background .25s, color .25s; }
-.top-btn:hover { background: var(--c1); border-color: var(--c1); color: #fff; }
+.top-btn:hover { background: var(--c3s); border-color: color-mix(in srgb, var(--c3) 45%, transparent); color: var(--c3d); }
 .top-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* setup: folder row */
@@ -285,7 +285,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .ptab.self[aria-current="true"] i { color: #fff; }
 .top-actions { display: flex; gap: 8px; }
 .top-btn.primary { background: var(--c3); border-color: var(--c3); color: #fff; }
-.top-btn.primary:hover { background: var(--c1); border-color: var(--c1); }
+.top-btn.primary:hover { background: var(--c3d); border-color: var(--c3d); color: #fff; }
 .preview-bar { position: fixed; z-index: 50; left: 50%; top: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; border-radius: var(--r2); background: var(--c3); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 14px 40px -12px color-mix(in srgb, var(--c3) 80%, transparent); }
 .preview-bar button { padding: 6px 12px; border: 0; border-radius: var(--r2); background: #fff; color: var(--c1); font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .turn.claude .av { background: var(--c1); color: #fff; font-size: 15px; }
@@ -338,7 +338,7 @@ body.collapsed .main { margin-left: 10px; }
 .chat .av { width: 22px; height: 22px; font-size: 10.5px; }
 .chat .ct { font-size: 13.5px; }
 .chat .del { display: none; width: 22px; height: 22px; place-items: center; border-radius: 7px; color: var(--c5); font-size: 15px; line-height: 1; }
-.chat .del:hover { background: var(--c1); color: var(--warn); }
+.chat .del:hover { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 .chat:hover .del, .chat:focus-within .del { display: grid; }
 .chat:hover .cm.hide-on-hover { display: none; }
 
@@ -408,9 +408,10 @@ body.collapsed .main { margin-left: 10px; }
 .composer .bar .target button { color: var(--c6); padding: 5px 11px; font-size: 12.5px; }
 .composer .bar .target button[aria-pressed="true"] { color: #fff; }
 .composer .bar .hint { flex: 1; min-width: 0; margin: 0; text-align: left; font-size: 11.5px; color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.composer .send { width: 36px; height: 36px; border-radius: 12px; background: var(--c1); }
+.composer .send { width: 36px; height: 36px; border-radius: 12px; background: var(--c3); transition: transform .3s var(--out), background .25s; }
+.composer .send:hover:not(:disabled) { background: var(--c3d); }
 .composer .send:disabled { background: var(--c4); color: var(--c5); opacity: 1; }
-.composer .send.stop { background: var(--c3); color: #fff; }
+.composer .send.stop { background: var(--c3s); color: var(--c3d); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c3) 40%, transparent); }
 .composer .owner-note { margin-bottom: 8px; }
 </style>
 </head>
