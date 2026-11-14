@@ -353,7 +353,8 @@ body.collapsed .main { margin-left: 10px; }
 .live { padding: 6px 12px 6px 10px; font-size: 12px; }
 
 .view { padding: 24px 22px 20px; }
-.chatcol { max-width: 760px; margin: 0 auto; display: grid; gap: 22px; }
+.chatcol { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.chatcol > * { min-width: 0; }
 .msg { display: flex; flex-direction: column; min-width: 0; }
 .msg.fresh { animation: rise .5s var(--out) both; }
 .msg.user { align-items: flex-end; }
@@ -366,7 +367,7 @@ body.collapsed .main { margin-left: 10px; }
 .msg.note .meta i { font-style: normal; color: var(--c3); font-weight: 600; }
 .msg.ai { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
 .aiic { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--c1); color: #fff; font-size: 14px; }
-.aibody { min-width: 0; display: grid; gap: 8px; padding-top: 4px; }
+.aibody { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding-top: 4px; }
 .aibody .meta { margin: 0; }
 .aibody .reply { margin: 0; padding: 0; border: 0; font-size: 15px; line-height: 1.6; }
 .aibody .reply .who { display: none; }
@@ -487,6 +488,8 @@ body.collapsed .main { margin-left: 10px; }
           <div class="cmd"><code>Чаты</code><p>Внутри проекта. Каждый чат — отдельный разговор с вашим Claude Code со своей памятью. Чаты напарника тоже видны, но вести их может только он.</p></div>
           <div class="cmd"><code>✦ Cowork</code><p>Особый проект в том же списке: чат, в котором Claude меняет само приложение. «Предпросмотр» показывает правки сразу, «Выпустить обновление» отправляет их вам обоим.</p></div>
           <div class="cmd"><code>Напарнику</code><p>Переключатель в поле ввода. Сообщение увидит только напарник, Claude его не читает.</p></div>
+          <div class="cmd"><code>Оба Claude</code><p>Ваш Claude становится ведущим: делит задачу и передаёт часть Claude напарника. Тот делает её на своём компьютере в отдельной ветке и присылает отчёт, ведущий сливает ветки. Нужно, чтобы Cowork был открыт у обоих.</p></div>
+          <div class="cmd"><code>Фото</code><p>Ctrl+V, перетаскивание или скрепка в поле ввода, до четырёх за раз. Claude их видит, напарник тоже. На ntfy.sh фото хранятся около трёх часов.</p></div>
           <div class="cmd"><code>/sync</code><p>Если работаете в терминале: в начале сессии Claude подтянет изменения и расскажет, что сделал напарник.</p></div>
         </div>
         <h2 class="h2">Вопросы<span class="dot"></span></h2>
@@ -1070,6 +1073,8 @@ body.collapsed .main { margin-left: 10px; }
   function deleteChat(id) {
     const c = myChats.find(x => x.id === id); if (!c) return;
     if (!confirm(`Удалить чат «${c.title}»? Он пропадёт у вас, у напарника останется до перезапуска.`)) return;
+    const r = runs.get(id); if (r) native?.claude?.stop(r.id);   // a deleted chat must not keep Claude working
+    queues.delete(id);
     myChats = myChats.filter(x => x.id !== id); saveChats();
     events = events.filter(e => chatOf(e) !== id); persistSoon();
     if (chatId === id) { chatId = null; const next = chatList().find(x => x.mine); show(next ? "chat" : "feed", next?.id); } else render();
@@ -1165,7 +1170,7 @@ body.collapsed .main { margin-left: 10px; }
 
   // ---------- desktop bridge (Electron), no-op in a browser ----------
   const native = window.coworkNative;
-  const NOTIFY = { ask: "пишет Claude", prompt: "дал(а) Claude задание", commit: "сделал(а) коммит", push: "запушил(а) ветку", pr: "открыл(а) pull request", note: "пишет вам" };
+  const NOTIFY = { ask: "пишет Claude", prompt: "дал(а) Claude задание", commit: "сделал(а) коммит", push: "запушил(а) ветку", pr: "открыл(а) pull request", note: "пишет вам", delegate: "· Claude передал часть задачи вашему Claude", report: "· Claude прислал отчёт вашему Claude" };
   function notify(e) { if (native && !e.local && NOTIFY[e.event] && e.user !== me && Date.now() - e.t < 120000) native.notify(`${e.user} ${NOTIFY[e.event]}`, cut(e.text, 200)); }
 
   // ---------- project settings ----------
@@ -1281,10 +1286,13 @@ body.collapsed .main { margin-left: 10px; }
   $("[data-clip]").addEventListener("click", () => fileIn.click());
   fileIn.addEventListener("change", () => { [...fileIn.files].forEach(addImage); fileIn.value = ""; });
   msg.addEventListener("paste", ev => { const fs = [...(ev.clipboardData?.items || [])].filter(i => i.kind === "file" && /^image\//.test(i.type)).map(i => i.getAsFile()); if (fs.length) { ev.preventDefault(); fs.forEach(addImage); } });
+  document.addEventListener("dragover", ev => ev.preventDefault());
+  document.addEventListener("drop", ev => { ev.preventDefault(); const fs = [...(ev.dataTransfer?.files || [])].filter(f => /^image\//.test(f.type)); if (fs.length && !ev.defaultHandled) fs.forEach(addImage); });
   const dropZone = $("[data-composer]");
   dropZone.addEventListener("dragover", ev => { if ([...(ev.dataTransfer?.types || [])].includes("Files")) { ev.preventDefault(); say.classList.add("drop"); } });
   dropZone.addEventListener("dragleave", () => say.classList.remove("drop"));
-  dropZone.addEventListener("drop", ev => { say.classList.remove("drop"); const fs = [...(ev.dataTransfer?.files || [])].filter(f => /^image\//.test(f.type)); if (fs.length) { ev.preventDefault(); fs.forEach(addImage); } });
+  dropZone.addEventListener("drop", ev => { say.classList.remove("drop"); const fs = [...(ev.dataTransfer?.files || [])].filter(f => /^image\//.test(f.type)); if (fs.length) { ev.preventDefault(); ev.stopPropagation(); fs.forEach(addImage); } });
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape") $(".zoom")?.remove(); });
   document.addEventListener("click", ev => {
     const z = ev.target.closest("img[data-zoom]");
     if (z) { const o = document.createElement("div"); o.className = "zoom"; o.innerHTML = `<img src="${esc(z.src)}" alt="">`; o.addEventListener("click", () => o.remove()); document.body.append(o); }
@@ -1323,6 +1331,8 @@ body.collapsed .main { margin-left: 10px; }
     if (atts.length) {
       sendBtn.disabled = true; hint.dataset.sticky = "1"; hint.textContent = "Загружаю фото…";
       imgs = await uploadAtts(atts.splice(0)); delete hint.dataset.sticky; renderAtts();
+      const partnerSide = !toClaude || (view === "chat" && c && !c.mine);
+      if (partnerSide && !text && !imgs.some(i => i.u)) { flash("Фото не загрузились на сервер канала, отправлять нечего."); renderComposer(); return; }
     }
     if (toClaude) { msg.value = ""; grow(); sendToClaude(text, undefined, team, imgs); return; }
     sendBtn.disabled = true;
@@ -1339,6 +1349,8 @@ body.collapsed .main { margin-left: 10px; }
   function sendToClaude(text, title, team, imgs) {
     const c = currentChat();
     const img = imgs?.length ? imgs.filter(i => i.u).map(i => ({ u: i.u, n: i.n })) : undefined, imgLocal = imgs?.map(i => i.local);
+    // my own chat that is missing locally (deleted, or another install): take it back, Claude starts a fresh session
+    if (view === "chat" && c && !c.mine && c.user === me) { myChats.unshift({ id: c.id, title: c.title, sid: "", t: c.t }); saveChats(); c.mine = true; }
     if (view === "chat" && c && !c.mine) {
       if (imgs?.length && !img.length) flash("Фото не загрузились, Claude напарника их не увидит.");
       publish({ event: "ask", chat: c.id, to: c.user, text: cut(text, 1000), team: team || undefined, img: img?.length ? img : undefined }, { full: text, imgLocal }); return;
@@ -1421,7 +1433,7 @@ ${FENCE}
     runs.set(e.chat, run);
     publish({ event: "take", chat: e.chat, ask: e.cid, run: run.id });
     const sid = teamSids()[e.chat] || "";
-    native.claude.run({ id: run.id, prompt: `${sid ? "" : TEAM_HELPER(e.user)}Задание от ведущего Claude (компьютер ${e.user}):\n${e.full || e.text}`, cwd: proj.folder, resume: sid, perm: proj.perm, self: proj.kind === "self" });
+    native.claude.run({ id: run.id, prompt: `${sid ? "" : TEAM_HELPER(e.user)}Задание от ведущего Claude (компьютер ${e.user}):\n${e.full || e.text}`, cwd: proj.folder, resume: sid, perm: proj.perm, self: proj.kind === "self", team: true });
     render();
   }
 
@@ -1496,7 +1508,7 @@ ${FENCE}
     if (!item.text && item.imgs?.length) prompt = prompt.replace(/: $/, ": (фото без подписи)");
     prompt += await photoNote(item, proj.folder);
     if (runs.get(chat.id) !== run) return;
-    native.claude.run({ id: run.id, prompt, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, self: proj.kind === "self" });
+    native.claude.run({ id: run.id, prompt, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, team: !!run.team, self: proj.kind === "self" });
     render();
   }
   let liveFrame = 0;

@@ -285,13 +285,15 @@ function githubRepo(dir) {
   } catch { return ""; }
 }
 
-ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self }) => {
+ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self, team }) => {
   const send = msg => { if (!e.sender.isDestroyed()) e.sender.send("claude:event", { id, ...msg }); };
   if (!cwd || !fs.existsSync(cwd)) return send({ done: true, error: "Папка проекта не найдена. Выберите её в настройках." });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
     "--permission-mode", PERMS.has(perm) ? perm : "acceptEdits"];
   // вкладка «Cowork»: Claude правит код самого приложения, ему можно git и npm, чтобы выпустить обновление
   if (self) args.push("--allowedTools", "Bash(git:*)", "Bash(npm:*)", "Bash(node:*)");
+  // «Оба Claude»: ветки, коммиты, push и слияние нужны обоим даже в режиме «Менять файлы»
+  else if (team) args.push("--allowedTools", "Bash(git:*)");
   if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
   // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
   const env = claudeEnv({ COWORK_ENABLED: "0" });
