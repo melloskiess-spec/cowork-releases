@@ -272,7 +272,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .pchip { display: flex; align-items: center; gap: 9px; max-width: 250px; padding: 5px 14px 5px 5px; border-radius: var(--r2); background: var(--c4); }
 .pchip .av { width: 30px; height: 30px; font-size: 13px; }
 .pchip .av i { border-color: var(--c4); width: 11px; height: 11px; }
-.pchip.is-ok .av i { background: var(--ok); } .pchip.is-wait .av i { background: var(--wait); }
+.pchip.is-ok .av i, .pchip.is-on .av i, .is-on .av i { background: var(--ok); } .pchip.is-wait .av i { background: var(--wait); }
 .pchip div { min-width: 0; line-height: 1.2; }
 .pchip b { display: block; font-size: 13px; }
 .pchip div > span { display: block; font-size: 11.5px; color: var(--c6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -674,6 +674,16 @@ body.collapsed .main { margin-left: 10px; }
     if (e.event === "live") { if (e.user !== me && e.run) { remoteLive.set(e.run, { chat: e.chat, text: String(e.text || ""), t: Date.now() }); return e; } return false; }
     if (e.event === "stop") { if (e.user !== me && (!timeSec || Date.now() / 1000 - timeSec < 120)) { const r = [...runs.values()].find(x => x.id === e.run); if (r) native?.claude?.stop(r.id); } return false; }
     if ((e.event === "reply" || e.event === "idle") && e.run) remoteLive.delete(e.run);
+    // presence: an open Cowork says "here" every couple of minutes; not stored, only updates who is online
+    if (e.event === "here") {
+      if (!e.user) return false;
+      let p = people.get(e.user);
+      if (!p) { p = { last: 0, ended: false, idle: true, now: "", branch: "", files: new Map() }; people.set(e.user, p); }
+      const t = e.ts ? Date.parse(e.ts) : (timeSec ? timeSec * 1000 : Date.now());
+      if (!isNaN(t) && t >= (p.seen || 0)) { p.seen = t; p.bye = !!e.bye; }
+      clearTimeout(ingest.pt); ingest.pt = setTimeout(() => render(), 300);
+      return false;
+    }
     if (e.cid) { if (seenCid.has(e.cid)) return false; seenCid.add(e.cid); }
     if (id) { seen.add(id); e._id = id; }
     e.seq = ++seq;
@@ -704,7 +714,13 @@ body.collapsed .main { margin-left: 10px; }
       store.set("cw.events." + pid, JSON.stringify(keep));
     }, 800);
   }
-  const stateOf = p => { const min = (Date.now() - p.last) / 60000; return p.ended || min > OFF_MIN ? ["off", "не в сети"] : p.idle || min > WORK_MIN ? ["wait", "ждёт · " + ago(p.last)] : ["ok", "работает с Claude"]; };
+  // "ok" = Claude is working for this person, "on" = Cowork is open, "off" = not seen for 5 minutes
+  const stateOf = (p, name) => {
+    const now = Date.now(), seen = Math.max(p.seen || 0, p.last || 0);
+    const online = name === me ? conn === "ok" : !p.bye && now - seen < 5 * 60e3;
+    if (!p.ended && !p.idle && now - p.last < WORK_MIN * 60e3) return ["ok", "работает с Claude"];
+    return online ? ["on", "в сети"] : ["off", seen ? "был(а) " + ago(seen) : "не в сети"];
+  };
 
   function buildTurns(list) {
     const turns = [], open = new Map();
@@ -849,7 +865,7 @@ body.collapsed .main { margin-left: 10px; }
       const run = tr.head?.run ? [...runs.values()].find(r => r.id === tr.head.run) : null;
       const latest = !arr.slice(i + 1).some(x => x.user === tr.user && x.head?.event !== "note");
       const appRun = tr.user === me && native?.claude && tr.head?.run;
-      const typing = !!run || (!appRun && tr.head?.event !== "note" && p && latest && stateOf(p)[0] === "ok" && !(last && ["idle", "end"].includes(last.event)));
+      const typing = !!run || (!appRun && tr.head?.event !== "note" && p && latest && stateOf(p, tr.user)[0] === "ok" && !(last && ["idle", "end"].includes(last.event)));
       const fresh = !shown.has(tr.key); shown.add(tr.key);
       const isNote = tr.head?.event === "note";
       const head = tr.head ? `<div class="bubble ${isNote ? "note" : ""}"><span class="tag">${isNote ? "сообщение" : "для Claude"}</span>${esc(tr.head.full || tr.head.text)}</div>` : "";
@@ -1010,7 +1026,7 @@ body.collapsed .main { margin-left: 10px; }
 
     // presence in the header
     const plist = [...people.entries()].sort((a, b) => (a[0] === me) - (b[0] === me) || b[1].last - a[1].last).slice(0, 3);
-    $("[data-presence]").innerHTML = plist.map(([name, p]) => { const [cls, label] = stateOf(p); return `<div class="pchip is-${cls}" title="${esc(p.now || "")}">${av(name)}<div><b>${esc(name)}${name === me ? " · вы" : ""}</b><span>${esc(label)}</span></div></div>`; }).join("");
+    $("[data-presence]").innerHTML = plist.map(([name, p]) => { const [cls, label] = stateOf(p, name); return `<div class="pchip is-${cls}" title="${esc(p.now || "")}">${av(name)}<div><b>${esc(name)}${name === me ? " · вы" : ""}</b><span>${esc(label)}</span></div></div>`; }).join("");
 
     // title
     const c = currentChat();
@@ -1033,7 +1049,7 @@ body.collapsed .main { margin-left: 10px; }
     $("[data-count-tasks]").textContent = tasks.length || "";
     $("[data-tasks]").innerHTML = tasks.length ? tasks.map(tr => {
       const p = people.get(tr.user), latest = turnsAll.filter(x => x.user === tr.user && x.head?.event === "prompt").at(-1) === tr;
-      const st = p && latest ? stateOf(p)[1].split(" · ")[0] : "готово";
+      const st = p && latest ? stateOf(p, tr.user)[1].split(" · ")[0] : "готово";
       const files = new Set(tr.steps.filter(s => s.event === "edit").map(s => s.file)).size, commits = tr.steps.filter(s => s.event === "commit").length;
       const ch = chatOf(tr.head);
       return `<article class="task" style="--tc:${colorOf(tr.user)};${ch ? "cursor:pointer" : ""}" ${ch ? `data-goto-chat="${esc(ch)}"` : ""}><span class="badge">${esc(tr.user)} · ${esc(st)}</span><h3>${esc(tr.head.text)}</h3>
@@ -1135,7 +1151,7 @@ body.collapsed .main { margin-left: 10px; }
     if (es) { es.close(); es = null; }
     if (!proj || proj.id !== pid) return;
     const src = new EventSource(base() + "/sse?since=" + since + authQ()); es = src;
-    src.onopen = () => { if (es === src) { conn = "ok"; render(); } };
+    src.onopen = () => { if (es === src) { const was = conn; conn = "ok"; if (was !== "ok") sayHere(); render(); } };
     src.onerror = () => {
       if (es !== src) return;
       src.close(); es = null; conn = "wait"; renderStatus();
@@ -1151,6 +1167,17 @@ body.collapsed .main { margin-left: 10px; }
     };
   }
   window.addEventListener("online", () => { if (proj && conn !== "ok") listen(proj.id, lastMsgTime ? String(lastMsgTime - 10) : "12h"); });
+  function sayHere(bye) {
+    if (!proj || !me) return;
+    if (bye) {
+      const body = JSON.stringify({ v: 1, user: me, event: "here", bye: true, ts: new Date().toISOString() });
+      try { if (!proj.token && navigator.sendBeacon?.(base(), body)) return; fetch(base(), { method: "POST", keepalive: true, headers: proj.token ? { Authorization: "Bearer " + proj.token } : {}, body }); } catch {}
+      return;
+    }
+    publish({ event: "here" });
+  }
+  setInterval(() => { if (conn === "ok") sayHere(); }, 120e3);
+  window.addEventListener("pagehide", () => sayHere(true));
   function switchProject(id) {
     const p = projects.find(x => x.id === id); if (!p || p.id === proj?.id) return;
     proj = p; store.set("cw.active", p.id); chatId = null;
@@ -1380,7 +1407,7 @@ body.collapsed .main { margin-left: 10px; }
   function partnerName(c) {
     if (c && !c.mine) return c.user;
     for (let i = events.length - 1; i >= 0; i--) if (events[i].user && events[i].user !== me) return events[i].user;
-    return "";
+    return [...people.keys()].find(n => n !== me) || "";
   }
   function sendToClaude(text, title, team, imgs) {
     const c = currentChat();
