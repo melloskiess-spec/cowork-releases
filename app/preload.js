@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("coworkNative", {
     check: quick => ipcRenderer.invoke("claude:check", !!quick),
     pickBin: () => ipcRenderer.invoke("claude:pick-bin"),
     install: () => ipcRenderer.invoke("claude:install"),
+    saveImage: opts => ipcRenderer.invoke("claude:save-image", opts),
     pickFolder: () => ipcRenderer.invoke("claude:pick-folder"),
     folderInfo: dir => ipcRenderer.invoke("claude:folder-info", String(dir || "")),
     run: opts => ipcRenderer.send("claude:run", opts),

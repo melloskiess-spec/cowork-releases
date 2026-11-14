@@ -237,6 +237,36 @@ ipcMain.handle("claude:pick-bin", async () => {
   return true;
 });
 
+// фото для Claude: кладём в <проект>/.cowork/images (папка скрыта от git через .git/info/exclude).
+// Фото напарника скачиваем только с сервера канала проекта.
+ipcMain.handle("claude:save-image", async (_e, { folder, name, data, url, server, token }) => {
+  try {
+    if (!folder || !fs.statSync(folder).isDirectory()) throw new Error("нет папки проекта");
+    const dir = path.join(folder, ".cowork", "images"); fs.mkdirSync(dir, { recursive: true });
+    try {
+      const ex = path.join(folder, ".git", "info", "exclude");
+      if (fs.existsSync(path.join(folder, ".git"))) {
+        const cur = fs.existsSync(ex) ? fs.readFileSync(ex, "utf8") : "";
+        if (!/^\.cowork\/?\s*$/m.test(cur)) { fs.mkdirSync(path.dirname(ex), { recursive: true }); fs.appendFileSync(ex, "\n.cowork/\n"); }
+      }
+    } catch {}
+    let buf;
+    if (data) buf = Buffer.from(String(data), "base64");
+    else {
+      const u = String(url || ""), srv = String(server || "").replace(/\/+$/, "");
+      if (!/^https?:\/\//.test(u) || !srv || !u.startsWith(srv + "/")) throw new Error("чужой адрес фото");
+      const r = await fetch(u, { headers: token ? { Authorization: "Bearer " + token } : {} });
+      if (!r.ok) throw new Error("фото недоступно, HTTP " + r.status);
+      buf = Buffer.from(await r.arrayBuffer());
+    }
+    if (!buf || !buf.length || buf.length > 20e6) throw new Error("пустое или слишком большое фото");
+    const safe = String(name || "photo.jpg").replace(/[^\w.-]/g, "_").slice(-60);
+    const f = path.join(dir, Date.now().toString(36) + "-" + safe);
+    fs.writeFileSync(f, buf);
+    return { path: f };
+  } catch (e) { return { error: String(e.message || e) }; }
+});
+
 ipcMain.handle("claude:pick-folder", async () => {
   const r = await dialog.showOpenDialog(win, { title: "Папка проекта", properties: ["openDirectory"] });
   if (r.canceled || !r.filePaths[0]) return null;
