@@ -985,7 +985,19 @@ body.collapsed .main { margin-left: 10px; }
     if (run && ![...seg.values()].some(g => g.run === run.id)) seg.set("live", { key: "c-live-" + run.id, t: Date.now(), items: [], run: run.id, host: run.user !== me ? run.user : "", live: run.live || " " });
     for (const r of runs.values()) if (r.helper && (!c || r.chat === c.id) && ![...seg.values()].some(g => g.run === r.id)) seg.set("h-" + r.id, { key: "c-live-" + r.id, t: Date.now(), items: [], run: r.id, host: "", live: r.live || " " });
     flushSeg();
-    $("[data-feed]").innerHTML = `<div class="chatcol">${out.join("")}</div>`;
+    // replace only the messages that changed: images don't reload and the page doesn't flicker while Claude streams
+    const feedEl = $("[data-feed]");
+    let col = feedEl.firstElementChild;
+    if (!col || !col.classList.contains("chatcol") || feedEl.children.length !== 1) { feedEl.innerHTML = '<div class="chatcol"></div>'; col = feedEl.firstElementChild; col._parts = []; }
+    const prevParts = col._parts || [];
+    for (let i = 0; i < out.length; i++) {
+      if (prevParts[i] === out[i] && col.children[i]) continue;
+      const tmp = document.createElement("div"); tmp.innerHTML = out[i];
+      const node = tmp.firstElementChild; if (!node) continue;
+      if (col.children[i]) col.children[i].replaceWith(node); else col.append(node);
+    }
+    while (col.children.length > out.length) col.lastElementChild.remove();
+    col._parts = out.slice();
     if (atBottom) requestAnimationFrame(() => { view$.scrollTop = view$.scrollHeight; });
   }
 
@@ -1094,6 +1106,7 @@ body.collapsed .main { margin-left: 10px; }
   const base = () => proj.server + "/" + encodeURIComponent(proj.topic);
   const authQ = () => proj.token ? "&auth=" + encodeURIComponent(btoa("Bearer " + proj.token).replace(/=+$/, "")) : "";
   async function connect() {
+    clearTimeout(retryTimer);
     if (es) { es.close(); es = null; }
     people.clear(); seen.clear(); seenCid.clear(); shown.clear(); events = []; conn = proj ? "wait" : "off";
     loadChats();
@@ -1101,20 +1114,43 @@ body.collapsed .main { margin-left: 10px; }
     const pid = proj.id;
     for (const e of store.json("cw.events." + pid, [])) ingest(e, e._id);
     shownReset(); render();
+    let histOk = false; lastMsgTime = 0;
     try {
       const r = await fetch(base() + "/json?poll=1&since=12h" + authQ());
       if (!r.ok) throw new Error(r.status);
       if (proj?.id !== pid) return;
-      for (const line of (await r.text()).split("\n")) { if (!line.trim()) continue; try { const m = JSON.parse(line); if (m.event === "message") ingest(m.message, m.id, m.time); } catch {} }
+      for (const line of (await r.text()).split("\n")) { if (!line.trim()) continue; try { const m = JSON.parse(line); if (m.time) lastMsgTime = Math.max(lastMsgTime, m.time); if (m.event === "message") ingest(m.message, m.id, m.time); } catch {} }
+      histOk = true;
     } catch (err) { console.warn("[cowork] history", err); }
     if (proj?.id !== pid) return;
     shownReset(); render();
     const f = $('[data-panel="feed"]'); f.scrollTop = f.scrollHeight;
-    const src = new EventSource(base() + "/sse?since=1m" + authQ()); es = src;
-    src.onopen = () => { if (es === src) { conn = "ok"; render(); } };
-    src.onerror = () => { if (es === src) { conn = "wait"; renderStatus(); } };
-    src.onmessage = ev => { if (es !== src) return; try { const m = JSON.parse(ev.data); const e = m.event === "message" && ingest(m.message, m.id, m.time); if (e) { render(); notify(e); } } catch {} };
+    listen(pid, histOk ? "1m" : "12h");
   }
+  // live stream. The browser's own reconnect would ask for the last minute only, so after sleep or a network gap
+  // we reconnect ourselves from the time of the last message we saw, and nothing in between is lost.
+  let lastMsgTime = 0, retryTimer = 0;
+  function listen(pid, since) {
+    clearTimeout(retryTimer);
+    if (es) { es.close(); es = null; }
+    if (!proj || proj.id !== pid) return;
+    const src = new EventSource(base() + "/sse?since=" + since + authQ()); es = src;
+    src.onopen = () => { if (es === src) { conn = "ok"; render(); } };
+    src.onerror = () => {
+      if (es !== src) return;
+      src.close(); es = null; conn = "wait"; renderStatus();
+      retryTimer = setTimeout(() => listen(pid, lastMsgTime ? String(lastMsgTime - 10) : "12h"), 3000);
+    };
+    src.onmessage = ev => {
+      if (es !== src) return;
+      try {
+        const m = JSON.parse(ev.data);
+        if (m.time) lastMsgTime = Math.max(lastMsgTime, m.time);
+        const e = m.event === "message" && ingest(m.message, m.id, m.time); if (e) { render(); notify(e); }
+      } catch {}
+    };
+  }
+  window.addEventListener("online", () => { if (proj && conn !== "ok") listen(proj.id, lastMsgTime ? String(lastMsgTime - 10) : "12h"); });
   function switchProject(id) {
     const p = projects.find(x => x.id === id); if (!p || p.id === proj?.id) return;
     proj = p; store.set("cw.active", p.id); chatId = null;
