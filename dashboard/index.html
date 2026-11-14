@@ -1418,11 +1418,15 @@ body.collapsed .main { margin-left: 10px; }
       $("[data-cc-setup]").hidden = false; $("[data-cc-setup2]").hidden = false;
       const ccCheck = () => { $("[data-cc-state]").textContent = "Проверяю Claude Code…"; native.claude.check().then(r => {
         ccOk = !!r.ok;
-        $("[data-cc-state]").innerHTML = r.ok ? `<b>Claude Code ${esc(r.version)}</b> найден. Работает на вашей подписке.` : '<b class="bad">Claude Code не найден.</b> Установите его: откройте PowerShell и выполните <code>irm https://claude.ai/install.ps1 | iex</code>, затем один раз запустите <code>claude</code> и войдите в свою подписку. После этого нажмите <a href="#" data-cc-recheck style="color:var(--c3)">проверить снова</a>.';
+        const pick = ' <a href="#" data-cc-pick style="color:var(--c3)">указать путь к claude вручную</a>', again = ' <a href="#" data-cc-recheck style="color:var(--c3)">проверить снова</a>';
+        $("[data-cc-state]").innerHTML = r.ok ? `<b>Claude Code ${esc(r.version)}</b> найден. Работает на вашей подписке.`
+          : r.bin ? `<b class="bad">Claude Code найден, но не запускается.</b> <code>${esc(r.bin)}</code>${r.error ? `<br>${esc(r.error)}` : ""}<br>${again} ·${pick}`
+          : `<b class="bad">Claude Code не найден.</b> Если он установлен, в PowerShell выполните <code>where.exe claude</code> и укажите этот файл:${pick}. Если не установлен: <code>irm https://claude.ai/install.ps1 | iex</code>, затем ${again}.<details style="margin-top:6px"><summary style="cursor:pointer">где искал</summary><code style="font-size:11px;white-space:pre-wrap">${esc((r.tried || []).join("\n"))}</code></details>`;
         render();
       }); };
       ccCheck();
       document.addEventListener("click", ev => { if (ev.target.closest("[data-cc-recheck]")) { ev.preventDefault(); ccCheck(); } });
+      document.addEventListener("click", ev => { if (ev.target.closest("[data-cc-pick]")) { ev.preventDefault(); native.claude.pickBin?.().then(ok => ok && ccCheck()); } });
     }
   }
 

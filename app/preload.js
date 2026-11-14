@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("coworkNative", {
   onUpdateStatus: fn => ipcRenderer.on("cowork:update-status", (_e, s) => fn(s)),
   claude: {
     check: () => ipcRenderer.invoke("claude:check"),
+    pickBin: () => ipcRenderer.invoke("claude:pick-bin"),
     pickFolder: () => ipcRenderer.invoke("claude:pick-folder"),
     folderInfo: dir => ipcRenderer.invoke("claude:folder-info", String(dir || "")),
     run: opts => ipcRenderer.send("claude:run", opts),

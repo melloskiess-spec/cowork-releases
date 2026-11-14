@@ -149,18 +149,64 @@ function readEnvFile(dir) {
   return out;
 }
 
+// ищем сам файл claude: свой путь из настроек → папки PATH и установки → where.exe → PowerShell (видит shim'ы scoop и т.п.)
+const BIN_FILE = () => path.join(app.getPath("userData"), "claude-path.txt");
+const BIN_NAMES = isWin ? ["claude.exe", "claude.cmd", "claude.bat"] : ["claude"];
+const isFile = f => { try { return fs.statSync(f).isFile(); } catch { return false; } };
+let CLAUDE_BIN = null, CLAUDE_TRIED = [];
+function resolveClaude() {
+  const tried = [];
+  try { const own = fs.readFileSync(BIN_FILE(), "utf8").trim(); if (own) { tried.push(own); if (isFile(own)) return { bin: own, tried }; } } catch {}
+  for (const dir of claudePath().split(isWin ? ";" : ":")) {
+    tried.push(dir);
+    for (const n of BIN_NAMES) { const f = path.join(dir.replace(/^"|"$/g, ""), n); if (isFile(f)) return { bin: f, tried }; }
+  }
+  const cp = require("child_process"), opt = { encoding: "utf8", windowsHide: true, timeout: 10000, env: claudeEnv() };
+  const probes = isWin
+    ? [["where.exe", ["claude"]], ["powershell.exe", ["-NoLogo", "-Command", "(Get-Command claude -ErrorAction SilentlyContinue).Source"]]]
+    : [[process.env.SHELL || "/bin/sh", ["-lc", "command -v claude"]]];
+  for (const [cmd, args] of probes) {
+    tried.push(cmd);
+    try {
+      for (const line of cp.execFileSync(cmd, args, opt).split(/\r?\n/).map(x => x.trim()).filter(Boolean)) {
+        if (isFile(line) && !/\.ps1$/i.test(line)) return { bin: line, tried };
+        if (/\.ps1$/i.test(line)) for (const ext of [".cmd", ".exe"]) { const f = line.replace(/\.ps1$/i, ext); if (isFile(f)) return { bin: f, tried }; }
+      }
+    } catch {}
+  }
+  return { bin: null, tried };
+}
+// .cmd/.bat запускаются только через cmd.exe, поэтому их и аргументы с пробелами берём в кавычки; .exe запускаем напрямую
+function spawnClaude(args, opts) {
+  if (!CLAUDE_BIN) { const r = resolveClaude(); CLAUDE_BIN = r.bin; CLAUDE_TRIED = r.tried; }
+  if (!CLAUDE_BIN) { const err = new Error("Claude Code не найден. Укажите путь к claude в настройках проекта."); err.code = "ENOENT"; throw err; }
+  if (isWin && /\.(cmd|bat)$/i.test(CLAUDE_BIN)) {
+    const q = a => /[\s"&|<>^()]/.test(a) ? `"${a.replace(/"/g, '""')}"` : a;
+    return spawn(`"${CLAUDE_BIN}"`, args.map(q), { ...opts, shell: true, windowsHide: true });
+  }
+  return spawn(CLAUDE_BIN, args, { ...opts, shell: false, windowsHide: true });
+}
+
 ipcMain.handle("claude:check", () => new Promise(resolve => {
-  let out = "", done = false;
-  const finish = v => { if (!done) { done = true; resolve(v); } };
+  let out = "", err = "", done = false;
+  CLAUDE_ENV = null; CLAUDE_BIN = null;   // каждая проверка ищет заново: вдруг Claude Code только что установили
+  const finish = v => { if (!done) { done = true; resolve({ ...v, bin: CLAUDE_BIN, tried: CLAUDE_TRIED.slice(0, 40) }); } };
   try {
-    CLAUDE_ENV = null;   // каждая проверка заново читает PATH: вдруг Claude Code только что установили
-    const p = spawn("claude", ["--version"], { shell: isWin, windowsHide: true, env: claudeEnv() });
+    const p = spawnClaude(["--version"], { env: claudeEnv() });
     p.stdout.on("data", d => out += d);
-    p.on("error", () => finish({ ok: false }));
-    p.on("close", code => finish(code === 0 ? { ok: true, version: out.trim().split(/\s+/)[0] } : { ok: false }));
-    setTimeout(() => { try { p.kill(); } catch {} finish({ ok: false, timeout: true }); }, 20000);
-  } catch { finish({ ok: false }); }
+    p.stderr.on("data", d => err += d);
+    p.on("error", e => finish({ ok: false, error: String(e.message || e) }));
+    p.on("close", code => finish(code === 0 ? { ok: true, version: out.trim().split(/\s+/)[0] } : { ok: false, error: (err || out).trim().slice(-400) || "код выхода " + code }));
+    setTimeout(() => { try { p.kill(); } catch {} finish({ ok: false, timeout: true, error: "claude --version не ответил за 30 секунд" }); }, 30000);
+  } catch (e) { finish({ ok: false, error: e.code === "ENOENT" ? "" : String(e.message || e) }); }
 }));
+ipcMain.handle("claude:pick-bin", async () => {
+  const r = await dialog.showOpenDialog(win, { title: "Где лежит claude", properties: ["openFile"],
+    filters: isWin ? [{ name: "Claude Code", extensions: ["exe", "cmd", "bat"] }] : [] });
+  if (r.canceled || !r.filePaths[0]) return false;
+  try { fs.writeFileSync(BIN_FILE(), r.filePaths[0]); } catch { return false; }
+  return true;
+});
 
 ipcMain.handle("claude:pick-folder", async () => {
   const r = await dialog.showOpenDialog(win, { title: "Папка проекта", properties: ["openDirectory"] });
@@ -186,12 +232,12 @@ ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self }) => {
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
     "--permission-mode", PERMS.has(perm) ? perm : "acceptEdits"];
   // вкладка «Cowork»: Claude правит код самого приложения, ему можно git и npm, чтобы выпустить обновление
-  if (self) args.push("--allowedTools", ...["Bash(git:*)", "Bash(npm:*)", "Bash(node:*)"].map(a => isWin ? `"${a}"` : a));
+  if (self) args.push("--allowedTools", "Bash(git:*)", "Bash(npm:*)", "Bash(node:*)");
   if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
   // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
   const env = claudeEnv({ COWORK_ENABLED: "0" });
   let p;
-  try { p = spawn("claude", args, { cwd, env, shell: isWin, windowsHide: true }); }
+  try { p = spawnClaude(args, { cwd, env }); }
   catch (err) { return send({ done: true, error: String(err.message || err) }); }
   runs.set(id, p);
   let buf = "", errTail = "";
