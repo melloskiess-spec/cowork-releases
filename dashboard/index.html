@@ -432,6 +432,51 @@ body.collapsed .main { margin-left: 10px; }
 .composer .send:disabled { background: var(--c4); color: var(--c5); opacity: 1; }
 .composer .send.stop { background: var(--c3s); color: var(--c3d); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c3) 40%, transparent); }
 .composer .owner-note { margin-bottom: 8px; }
+/* ---------- themes: "classic" is the original look; others re-tint the same layout ---------- */
+body[data-theme="warm"] { --c3: #c96442; --c3d: #a9502f; --c3s: #f7ebe3; --c4: #efebe1; --line-l: #e7e2d6; background: #f0eee6; color: #1f1e1d; }
+body[data-theme="light"] { --c4: #f0eff5; --line-l: #e7e6ee; background: #f5f5f8; color: #17161c; }
+[data-theme="warm"] .side { --c2: #1f1e1d; --c1: #f0eee6; --c8: #e7e3d8; --c7: #e0dbcd; --c5: #78756c; --c6: #a29e93; --line-d: #ddd8ca; background: transparent; border-right: 0; }
+[data-theme="light"] .side { --c2: #17161c; --c1: #f5f5f8; --c8: #ebebf0; --c7: #e3e2ea; --c5: #74727d; --c6: #9d9ba6; --line-d: #e1e0e8; background: transparent; border-right: 0; }
+[data-theme="warm"] .main { background: #fbfaf7; box-shadow: 0 0 0 1px #e7e2d6, 0 18px 50px -30px rgb(80 50 20 / .35); }
+[data-theme="light"] .main { background: #fff; box-shadow: 0 0 0 1px #e7e6ee, 0 18px 50px -30px rgb(20 10 60 / .25); }
+[data-theme="warm"] .pmenu, [data-theme="light"] .pmenu { box-shadow: 0 24px 60px -24px rgb(0 0 0 / .35); }
+[data-theme="warm"] .ubub { background: #efebe1; }
+[data-theme="light"] .ubub { background: #f0eff5; }
+[data-theme="warm"] .msg.partner .ubub { background: color-mix(in srgb, var(--pc) 13%, #fbfaf7); }
+[data-theme="warm"] .tools { background: #f6f4ee; }
+[data-theme="light"] .tools { background: #fafafc; }
+[data-theme="warm"] .aiic { background: #f6e9e1 !important; }
+/* light dialogs for the light themes */
+[data-theme="warm"] dialog, [data-theme="light"] dialog { --c2: #1f1e1d; --c1: #fbfaf7; --c5: #7a776e; --c6: #9e9a8f; --line-d: #e2ddd0; background: #fbfaf7; color: #1f1e1d; }
+[data-theme="light"] dialog { --c2: #17161c; --c1: #fff; background: #fff; color: #17161c; }
+[data-theme="warm"] dialog input, [data-theme="warm"] dialog select, [data-theme="light"] dialog input, [data-theme="light"] dialog select { border-bottom-color: #d8d2c3; color: inherit; background: transparent; }
+[data-theme="warm"] dialog .sep, [data-theme="light"] dialog .sep { background: #e7e2d6; }
+[data-theme="warm"] .invite-text, [data-theme="light"] .invite-text { border-color: #ddd8ca; color: inherit; background: #fff; }
+[data-theme="warm"] dialog .btn--ghost, [data-theme="light"] dialog .btn--ghost { box-shadow: inset 0 0 0 1.5px #d8d2c3; }
+/* dark: everything dark, softer contrast */
+body[data-theme="dark"] { --c3: #7352f5; --c3d: #8a6dff; --c3s: #262037; --line-l: #2a2833; }
+[data-theme="dark"] .main { --c1: #ecebf2; --c6: #a3a0ad; --c5: #706d7b; --c4: #23212b; background: #131218; color: #ecebf2; box-shadow: 0 0 0 1px #24222c; }
+[data-theme="dark"] .ubub { background: #23212b; }
+[data-theme="dark"] .msg.partner .ubub { background: color-mix(in srgb, var(--pc) 18%, #131218); }
+[data-theme="dark"] .tools, [data-theme="dark"] .composer form.box, [data-theme="dark"] .suggest button { background: #1a1920; border-color: #2a2833; }
+[data-theme="dark"] .composer form.box textarea { color: #ecebf2; }
+[data-theme="dark"] .composer .send:disabled { background: #26242e; color: #5e5b68; }
+[data-theme="dark"] .reply pre { background: #0b0a0f; color: #e6e5ee; }
+[data-theme="dark"] .reply code { background: #26242e; }
+[data-theme="dark"] .aiic { background: #2a211d !important; box-shadow: inset 0 0 0 1px #3a2c25 !important; }
+[data-theme="dark"] .msg.handoff .hbox { background: #1d1928; }
+[data-theme="dark"] .task { background: #1a1920; }
+[data-theme="dark"] .row { background: #1a1920; }
+[data-theme="dark"] .top-btn { border-color: #2a2833; }
+[data-theme="dark"] .pchip { background: #1f1d26; }
+/* theme picker */
+.themes { display: flex; gap: 6px; padding: 4px 10px 8px; }
+.themes button { flex: 1; display: grid; justify-items: center; gap: 4px; padding: 6px 2px; border: 1px solid transparent; border-radius: 10px; background: none; color: var(--c5); font-size: 11px; cursor: pointer; }
+.themes button:hover { background: var(--c8); color: var(--c2); }
+.themes button[aria-pressed="true"] { border-color: var(--c3); color: var(--c2); }
+.themes i { width: 34px; height: 22px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgb(127 127 127 / .3); }
+[data-theme="dark"] .reply pre code { background: none; }
+body[data-theme] .msg.note .ubub { background: none; }
 </style>
 </head>
 <body>
@@ -606,6 +651,18 @@ body.collapsed .main { margin-left: 10px; }
     files: ["Файлы", "Что меняли за последние два часа и где можно столкнуться"],
     help: ["Как работать", "Проекты, чаты и ответы на частые вопросы"]
   };
+
+  // ---------- theme ----------
+  const THEMES = [["warm", "Тёплая", "linear-gradient(90deg,#f0eee6 45%,#c96442 45%)"], ["light", "Светлая", "linear-gradient(90deg,#f5f5f8 45%,#6c3cff 45%)"], ["dark", "Тёмная", "linear-gradient(90deg,#131218 45%,#8b6bff 45%)"], ["classic", "Контраст", "linear-gradient(90deg,#0d0c11 45%,#fff 45%)"]];
+  let theme = "warm";
+  try { theme = localStorage.getItem("cw.theme") || "warm"; } catch {}
+  document.body.dataset.theme = theme;
+  document.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-theme-pick]"); if (!b) return;
+    theme = b.dataset.themePick; document.body.dataset.theme = theme;
+    try { localStorage.setItem("cw.theme", theme); } catch {}
+    document.querySelectorAll("[data-theme-pick]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.themePick === theme)));
+  });
 
   // ---------- storage ----------
   const store = {
@@ -841,7 +898,8 @@ body.collapsed .main { margin-left: 10px; }
       + (normal.length ? normal.map(p => `<button class="pm-item" type="button" role="menuitem" data-proj="${esc(p.id)}"><i style="background:${colorOf(p.name)}"></i><span class="pn"><b>${esc(p.name)}</b><span>${esc(p.folder || "папка не выбрана")}</span></span>${p.id === proj?.id ? check : ""}</button>`).join("") : '<div class="pm-label" style="text-transform:none;letter-spacing:0;font-weight:500">Пока ни одного</div>')
       + `<button class="pm-item" type="button" role="menuitem" data-proj-add><i class="ic">+</i><span class="pn"><b>Добавить проект</b><span>папка с кодом и канал с напарником</span></span></button>`
       + (native?.self ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-self-tab><i class="ic">✦</i><span class="pn"><b>Код Cowork</b><span>менять само приложение вместе с Claude</span></span>${selfP && selfP.id === proj?.id ? check : ""}</button>` : "")
-      + (proj ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-open-setup-menu><i class="ic">⚙</i><span class="pn"><b>Настройки проекта</b><span>${esc(proj.kind === "self" ? "Код Cowork" : proj.name)}: папка, канал, права Claude</span></span></button>` : "");
+      + (proj ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-open-setup-menu><i class="ic">⚙</i><span class="pn"><b>Настройки проекта</b><span>${esc(proj.kind === "self" ? "Код Cowork" : proj.name)}: папка, канал, права Claude</span></span></button>` : "")
+      + `<div class="pm-sep"></div><div class="pm-label">Оформление</div><div class="themes">${THEMES.map(([id, label, sw]) => `<button type="button" data-theme-pick="${id}" aria-pressed="${theme === id}"><i style="background:${sw}"></i>${label}</button>`).join("")}</div>`;
   }
   pswitch.addEventListener("click", ev => { ev.stopPropagation(); openPMenu(); });
   document.addEventListener("click", ev => { if (!pmenu.hidden && !ev.target.closest(".pswitch-wrap")) openPMenu(false); });
