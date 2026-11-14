@@ -301,6 +301,113 @@ button, input, textarea { font: inherit; color: inherit; }
   .ptabs, .side-new, .side-head, .chats { display: none; }
   .presence { display: none; }
 }
+
+/* ---------- v0.5: chat layout in the spirit of a classic AI chat (centered column, greeting, composer card) ---------- */
+.app { transition: grid-template-columns .35s var(--ease); }
+body.collapsed .app { grid-template-columns: 0 minmax(0, 1fr); }
+body.collapsed .side { visibility: hidden; }
+body.collapsed .main { margin-left: 10px; }
+.side { min-width: 0; overflow: hidden; }
+.brand { padding: 18px 14px 10px 22px; }
+.logo { font-size: 24px; }
+.sl-top { margin: 6px 22px 6px; }
+.pswitch-wrap { position: relative; padding: 0 12px 10px; }
+.pswitch { width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) 16px; align-items: center; gap: 11px; padding: 11px 12px 11px 14px; border: 1px solid var(--line-d); border-radius: 16px; background: var(--c8); color: var(--c2); text-align: left; cursor: pointer; transition: border-color .25s, background .25s; }
+.pswitch:hover, .pswitch[aria-expanded="true"] { border-color: var(--c6); background: var(--c7); }
+.pswitch > i { width: 10px; height: 10px; border-radius: var(--r2); background: var(--c3); }
+.pswitch .pn { min-width: 0; display: grid; line-height: 1.25; }
+.pswitch .pn b { font-size: 14.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pswitch .pn span { font-size: 12px; color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pswitch svg, .pm-item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--c5); }
+.pmenu { position: absolute; z-index: 30; left: 12px; right: 12px; top: calc(100% - 4px); padding: 6px; border: 1px solid var(--line-d); border-radius: 16px; background: var(--c7); box-shadow: 0 24px 60px -20px #000; animation: viewin .25s var(--out); }
+.pm-label { padding: 8px 10px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--c6); }
+.pm-item { width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) 16px; align-items: center; gap: 10px; padding: 9px 10px; border: 0; border-radius: 10px; background: none; color: var(--c2); text-align: left; cursor: pointer; }
+.pm-item:hover { background: var(--c8); }
+.pm-item > i { width: 9px; height: 9px; border-radius: var(--r2); background: var(--c3); font-style: normal; }
+.pm-item > i.ic { width: 14px; height: auto; margin-left: -2px; background: none; color: var(--c3); font-size: 17px; font-weight: 700; line-height: 1; text-align: center; }
+.pm-item { grid-template-columns: 14px minmax(0, 1fr) 16px; }
+.pm-item .pn { min-width: 0; display: grid; line-height: 1.25; }
+.pm-item .pn b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-item .pn span { font-size: 11.5px; color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-sep { height: 1px; margin: 6px 4px; background: var(--line-d); }
+.side-new { padding: 0 12px 6px; }
+.side-new .btn { min-height: 40px; font-size: 14px; }
+.chats { gap: 1px; padding-top: 4px; }
+.chat-group { padding: 12px 10px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--c6); }
+.chat { position: relative; grid-template-columns: 22px minmax(0, 1fr) auto; padding: 8px 10px; }
+.chat .av { width: 22px; height: 22px; font-size: 10.5px; }
+.chat .ct { font-size: 13.5px; }
+.chat .del { display: none; width: 22px; height: 22px; place-items: center; border-radius: 7px; color: var(--c5); font-size: 15px; line-height: 1; }
+.chat .del:hover { background: var(--c1); color: var(--warn); }
+.chat:hover .del, .chat:focus-within .del { display: grid; }
+.chat:hover .cm.hide-on-hover { display: none; }
+
+.top { min-height: 64px; padding: 12px 22px; gap: 12px; }
+.top h1 { font: 700 19px/1.2 var(--f1); letter-spacing: -0.02em; }
+.top h1 .dot { width: 6px; height: 6px; }
+.top .sub { margin-top: 2px; font-size: 12.5px; }
+.icon-btn.light { border-color: var(--line-l); color: var(--c6); flex: none; }
+.pchip { padding: 3px 12px 3px 3px; }
+.pchip .av { width: 26px; height: 26px; font-size: 12px; }
+.pchip b { font-size: 12.5px; } .pchip div > span { font-size: 11px; }
+.live { padding: 6px 12px 6px 10px; font-size: 12px; }
+
+.view { padding: 24px 22px 20px; }
+.chatcol { max-width: 760px; margin: 0 auto; display: grid; gap: 22px; }
+.msg { display: flex; flex-direction: column; min-width: 0; }
+.msg.fresh { animation: rise .5s var(--out) both; }
+.msg.user { align-items: flex-end; }
+.msg .meta { display: flex; align-items: center; gap: 8px; margin: 0 4px 5px; font-size: 12px; color: var(--c6); }
+.msg .meta b { color: var(--c1); font-weight: 600; }
+.msg .meta .av { width: 20px; height: 20px; font-size: 10px; }
+.ubub { max-width: min(82%, 60ch); padding: 10px 15px; border-radius: 20px 20px 6px 20px; background: linear-gradient(135deg, var(--c4), #e7e5ef); box-shadow: 0 1px 0 rgb(0 0 0 / .04); font-size: 15px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.partner .ubub { background: linear-gradient(135deg, color-mix(in srgb, var(--pc) 16%, #fff), color-mix(in srgb, var(--pc) 9%, #fff)); }
+.msg.note .ubub { background: none; border: 1.5px dashed color-mix(in srgb, var(--c3) 45%, transparent); }
+.msg.note .meta i { font-style: normal; color: var(--c3); font-weight: 600; }
+.msg.ai { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
+.aiic { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--c1); color: #fff; font-size: 14px; }
+.aibody { min-width: 0; display: grid; gap: 8px; padding-top: 4px; }
+.aibody .meta { margin: 0; }
+.aibody .reply { margin: 0; padding: 0; border: 0; font-size: 15px; line-height: 1.6; }
+.aibody .reply .who { display: none; }
+.aibody .reply.err { padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--warn) 10%, #fff); color: var(--c1); }
+.aibody .reply.err .who { display: flex; }
+.aibody .reply.streaming { color: var(--c6); }
+.tools { border: 1px solid var(--line-l); border-radius: 14px; background: #fbfafd; }
+.tools summary { display: flex; align-items: center; gap: 9px; padding: 8px 12px; font-size: 13px; color: var(--c6); cursor: pointer; list-style: none; user-select: none; }
+.tools summary::-webkit-details-marker { display: none; }
+.tools summary svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tools summary .chev { margin-left: auto; transition: transform .3s var(--out); }
+.tools[open] summary .chev { transform: rotate(180deg); }
+.tools summary .spin { width: 13px; height: 13px; border-radius: var(--r2); border: 2px solid color-mix(in srgb, var(--c3) 25%, transparent); border-top-color: var(--c3); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tools .steps { margin: 0; padding: 0 12px 6px; }
+.tools .steps li { font-size: 13px; padding: 6px 0; }
+.ai-status { font-size: 12.5px; color: var(--c6); }
+.pending { margin: 6px 6px 0; }
+
+.greet { display: grid; place-content: center; justify-items: center; gap: 26px; min-height: 100%; padding: 30px 10px; text-align: center; }
+.greet h2 { margin: 0; font: 800 clamp(34px, 4.4vw, 52px)/1 var(--f1); letter-spacing: -0.045em; }
+.greet p { margin: -14px 0 0; max-width: 34rem; color: var(--c6); font-size: 15px; }
+.suggest { width: min(640px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.suggest button { padding: 14px 16px; border: 1px solid var(--line-l); border-radius: 16px; background: #fff; color: var(--c6); font-size: 13.5px; line-height: 1.4; text-align: left; cursor: pointer; transition: transform .3s var(--out), border-color .25s, color .25s, box-shadow .3s; }
+.suggest button b { display: block; margin-bottom: 2px; color: var(--c1); font-weight: 600; }
+.suggest button:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--c3) 45%, transparent); color: var(--c1); box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--c3) 60%, transparent); }
+
+.composer { padding: 0 22px 18px; }
+.composer form.box { max-width: 760px; display: block; padding: 0; border-radius: 22px; background: #fff; color: var(--c1); border: 1px solid var(--line-l); box-shadow: 0 10px 30px -16px rgb(13 12 17 / .25); }
+.composer form.box:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c3) 22%, transparent), 0 10px 30px -16px rgb(13 12 17 / .25); border-color: color-mix(in srgb, var(--c3) 55%, transparent); }
+.composer form.box textarea { display: block; width: 100%; min-height: 58px; max-height: 220px; padding: 15px 18px 4px; font-size: 15px; color: var(--c1); }
+.composer form.box textarea::placeholder { color: var(--c5); }
+.composer .bar { display: flex; align-items: center; gap: 10px; padding: 6px 8px 8px 10px; }
+.composer .bar .target { background: var(--c4); }
+.composer .bar .target button { color: var(--c6); padding: 5px 11px; font-size: 12.5px; }
+.composer .bar .target button[aria-pressed="true"] { color: #fff; }
+.composer .bar .hint { flex: 1; min-width: 0; margin: 0; text-align: left; font-size: 11.5px; color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer .send { width: 36px; height: 36px; border-radius: 12px; background: var(--c1); }
+.composer .send:disabled { background: var(--c4); color: var(--c5); opacity: 1; }
+.composer .send.stop { background: var(--c3); color: #fff; }
+.composer .owner-note { margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -309,17 +416,20 @@ button, input, textarea { font: inherit; color: inherit; }
   <aside class="side">
     <div class="brand">
       <div class="logo">Cowork<span class="dot"></span></div>
-      <button class="icon-btn" type="button" data-open-setup title="Настройки проекта" aria-label="Настройки проекта"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+      <button class="icon-btn" type="button" data-collapse title="Скрыть панель" aria-label="Скрыть панель"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
     </div>
-    <div class="ptabs" role="tablist" aria-label="Проекты" data-ptabs></div>
+    <div class="side-label sl-top">Проект</div>
+    <div class="pswitch-wrap">
+      <button class="pswitch" type="button" data-pswitch aria-haspopup="menu" aria-expanded="false" title="Сменить проект"><i data-pdot></i><span class="pn"><b data-pname>Нет проекта</b><span data-pfolder>Добавьте проект</span></span><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
+      <div class="pmenu" data-pmenu hidden role="menu"></div>
+    </div>
     <div class="side-new"><button class="btn" type="button" data-new-chat>Новый чат</button></div>
     <nav class="nav compact" aria-label="Разделы">
       <button type="button" data-view="feed"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Все события<span class="count" data-count-feed></span></button>
       <button type="button" data-view="tasks"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>Задания<span class="count" data-count-tasks></span></button>
       <button type="button" data-view="files"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>Файлы<span class="count" data-count-files></span></button>
-      <button type="button" data-view="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>Как работать</button>
+      <button type="button" data-view="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>Помощь</button>
     </nav>
-    <div class="side-head"><div class="side-label">Чаты</div></div>
     <div class="chats" data-chats></div>
     <div class="side-foot">
       <button class="btn btn--ghost invite" type="button" data-invite>Пригласить напарника</button>
@@ -330,6 +440,7 @@ button, input, textarea { font: inherit; color: inherit; }
 
   <main class="main">
     <header class="top">
+      <button class="icon-btn light" type="button" data-expand hidden title="Показать панель" aria-label="Показать панель"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
       <div class="grow"><h1 data-title>Чат<span class="dot"></span></h1><div class="sub" data-subtitle></div></div>
       <div class="top-actions" data-self-actions hidden>
         <button class="top-btn" type="button" data-preview title="Открыть приложение из вашей копии кода, с последними правками">Предпросмотр</button>
@@ -341,7 +452,7 @@ button, input, textarea { font: inherit; color: inherit; }
 
     <section class="view" data-panel="feed" aria-label="Лента">
       <div class="wrap" data-feed></div>
-      <div class="hello" data-hello><div><h2 data-hello-title>Hello<span class="dot"></span></h2><p data-hello-text></p></div></div>
+      <div class="greet" data-hello><h2 data-hello-title>Hello<span class="dot"></span></h2><p data-hello-text></p><div class="suggest" data-suggest></div></div>
     </section>
     <section class="view" data-panel="tasks" hidden aria-label="Задания"><div class="wrap"><div class="grid" data-tasks></div></div></section>
     <section class="view" data-panel="files" hidden aria-label="Файлы"><div class="wrap"><div data-alert></div><div class="rows" data-files></div></div></section>
@@ -349,15 +460,16 @@ button, input, textarea { font: inherit; color: inherit; }
       <div class="wrap">
         <h2 class="h2">Как это устроено<span class="dot"></span></h2>
         <div class="cmds">
-          <div class="cmd"><code>Проекты</code><p>Вкладки слева сверху. У каждого проекта своя папка на компьютере и свой канал с напарником. «+» добавляет проект.</p></div>
+          <div class="cmd"><code>Проект</code><p>Карточка слева сверху: папка с кодом на вашем компьютере и общий канал с напарником. Нажмите, чтобы переключить проект или добавить новый.</p></div>
           <div class="cmd"><code>Чаты</code><p>Внутри проекта. Каждый чат — отдельный разговор с вашим Claude Code со своей памятью. Чаты напарника тоже видны, но вести их может только он.</p></div>
-          <div class="cmd"><code>✦ Cowork</code><p>Особая вкладка: чат, в котором Claude меняет само приложение. «Предпросмотр» показывает правки сразу, «Выпустить обновление» отправляет их вам обоим.</p></div>
+          <div class="cmd"><code>✦ Cowork</code><p>Особый проект в том же списке: чат, в котором Claude меняет само приложение. «Предпросмотр» показывает правки сразу, «Выпустить обновление» отправляет их вам обоим.</p></div>
           <div class="cmd"><code>Напарнику</code><p>Переключатель в поле ввода. Сообщение увидит только напарник, Claude его не читает.</p></div>
           <div class="cmd"><code>/sync</code><p>Если работаете в терминале: в начале сессии Claude подтянет изменения и расскажет, что сделал напарник.</p></div>
         </div>
         <h2 class="h2">Вопросы<span class="dot"></span></h2>
         <div class="faq">
-          <details open><summary>Как подключить напарника?</summary><p>Нажмите «Пригласить напарника» внизу слева. Там два шага: дать доступ к репозиторию на GitHub и отправить готовый текст с ссылкой на Cowork и каналом проекта.</p></details>
+          <details open><summary>Что такое проект?</summary><p>Проект — это папка с кодом на вашем компьютере плюс общий канал с напарником. Переключаются проекты в карточке «Проект» слева сверху. Там же «Добавить проект», код самого Cowork и настройки текущего проекта.</p></details>
+          <details><summary>Как подключить напарника?</summary><p>Нажмите «Пригласить напарника» внизу слева. Там два шага: дать доступ к репозиторию на GitHub и отправить готовый текст с ссылкой на Cowork и каналом проекта.</p></details>
           <details><summary>Как работает чат с Claude?</summary><p>Приложение запускает Claude Code на вашем компьютере в папке проекта, на вашей подписке. Ответы и шаги появляются в чате, напарник видит их у себя. Что Claude может делать без вопросов, настраивается в шестерёнке: по умолчанию он меняет файлы, но не запускает команды.</p></details>
           <details><summary>Как устроен общий чат?</summary><p>Чат живёт на компьютере того, кто его создал: там работает Claude Code, на его подписке и в его папке проекта. Второй человек пишет в тот же чат, сообщение приходит на компьютер создателя и Claude отвечает обоим, как будто вы сидите за одним компьютером. Каждое сообщение подписано именем. Если компьютер создателя выключен, сообщение подождёт, пока там откроют Cowork.</p></details>
           <details><summary>Что видит напарник?</summary><p>Всё, что в чате: сообщения, ответы Claude, какие файлы он читал и менял, команды, коммиты. Содержимое файлов не передаётся.</p></details>
@@ -369,12 +481,14 @@ button, input, textarea { font: inherit; color: inherit; }
 
     <div class="composer" data-composer>
       <div class="owner-note" data-owner-note hidden></div>
-      <form data-say>
-        <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
-        <textarea rows="1" name="message" placeholder="Задание для Claude…" aria-label="Сообщение"></textarea>
-        <button class="send" type="submit" disabled aria-label="Отправить"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+      <form data-say class="box">
+        <textarea rows="2" name="message" placeholder="Написать Claude…" aria-label="Сообщение"></textarea>
+        <div class="bar">
+          <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
+          <span class="hint" data-hint></span>
+          <button class="send" type="submit" disabled aria-label="Отправить"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
       </form>
-      <div class="hint" data-hint></div>
     </div>
   </main>
 </div>
@@ -648,26 +762,52 @@ button, input, textarea { font: inherit; color: inherit; }
     $("[data-live-text]").textContent = ok ? "в эфире" : conn === "wait" ? "подключаюсь" : "офлайн";
   }
 
+  const GROUPS = [["Сегодня", 0], ["Вчера", 1], ["Последние 7 дней", 7], ["Раньше", Infinity]];
+  function dayDiff(t) { const a = new Date(); a.setHours(0, 0, 0, 0); return Math.max(0, Math.ceil((a - t) / 86400e3)); }
   function renderSide(chats) {
-    const selfP = projects.find(p => p.kind === "self");
-    $("[data-ptabs]").innerHTML = projects.filter(p => p.kind !== "self").map(p => `<button class="ptab" role="tab" type="button" data-proj="${esc(p.id)}" aria-current="${p.id === proj?.id}" title="${esc(p.folder || p.name)}"><i style="background:${colorOf(p.name)}"></i><span>${esc(p.name)}</span></button>`).join("")
-      + (native?.self ? `<button class="ptab self" type="button" data-self-tab aria-current="${!!selfP && selfP.id === proj?.id}" title="Менять само приложение вместе с Claude"><i>✦</i><span>Cowork</span></button>` : "")
-      + '<button class="ptab add" type="button" data-proj-add title="Добавить проект" aria-label="Добавить проект">+</button>';
+    $("[data-pname]").textContent = proj ? (proj.kind === "self" ? "✦ Код Cowork" : proj.name) : "Нет проекта";
+    $("[data-pfolder]").textContent = proj ? (proj.folder ? "…/" + proj.folder.split(/[\\/]/).filter(Boolean).slice(-2).join("/") : "папка не выбрана") : "Нажмите, чтобы добавить";
+    pswitch.title = proj?.folder ? proj.folder + " · сменить проект" : "Сменить проект";
+    $("[data-pdot]").style.background = proj ? (proj.kind === "self" ? "var(--c3)" : colorOf(proj.name)) : "var(--c6)";
     $("[data-self-actions]").hidden = proj?.kind !== "self";
-    $("[data-chats]").innerHTML = chats.length ? chats.map(c => {
-      const p = people.get(c.user), st = c.mine ? (runs.has(c.id) ? "ok" : "off") : p ? stateOf(p)[0] : "off";
-      const busy = runs.has(c.id);
-      return `<button class="chat ${busy ? "busy" : ""} is-${st}" type="button" data-chat="${esc(c.id)}" aria-current="${view === "chat" && c.id === chatId}" title="${esc(c.title)}">${av(c.user)}<span class="ct">${esc(c.title)}</span><span class="cm">${busy ? "работает" : short(c.last)}</span></button>`;
-    }).join("") : '<div class="empty-side">Чатов пока нет. Нажмите «Новый чат» и дайте Claude задание.</div>';
+    let html = "", lastG = "";
+    for (const c of chats) {
+      const d = dayDiff(c.last), g = GROUPS.find(([, n]) => d <= n)[0];
+      if (g !== lastG) { html += `<div class="chat-group">${g}</div>`; lastG = g; }
+      const busy = runs.has(c.id) || !c.mine && !!activeRun(c.id);
+      const st = busy ? "ok" : "off";
+      html += `<div class="chat ${busy ? "busy" : ""} is-${st}" role="button" tabindex="0" data-chat="${esc(c.id)}" aria-current="${view === "chat" && c.id === chatId}" title="${esc(c.title)}${c.mine ? "" : " · чат " + esc(c.user)}">${av(c.user)}<span class="ct">${esc(c.title)}</span>`
+        + (c.mine && !busy ? `<span class="cm hide-on-hover">${short(c.last)}</span><span class="del" data-del-chat="${esc(c.id)}" title="Удалить чат" role="button">×</span>` : `<span class="cm">${busy ? "работает" : short(c.last)}</span>`) + "</div>";
+    }
+    $("[data-chats]").innerHTML = html || '<div class="chat-group">Чаты проекта</div><div class="empty-side">Пока пусто. Нажмите «Новый чат» и напишите Claude задание.</div>';
     $$("[data-view]").forEach(b => b.dataset.view === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
   }
+  // project menu
+  const pmenu = $("[data-pmenu]"), pswitch = $("[data-pswitch]");
+  function openPMenu(open = pmenu.hidden) {
+    pmenu.hidden = !open; pswitch.setAttribute("aria-expanded", String(open));
+    if (!open) return;
+    const normal = projects.filter(p => p.kind !== "self"), selfP = projects.find(p => p.kind === "self");
+    const check = '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+    pmenu.innerHTML = '<div class="pm-label">Ваши проекты</div>'
+      + (normal.length ? normal.map(p => `<button class="pm-item" type="button" role="menuitem" data-proj="${esc(p.id)}"><i style="background:${colorOf(p.name)}"></i><span class="pn"><b>${esc(p.name)}</b><span>${esc(p.folder || "папка не выбрана")}</span></span>${p.id === proj?.id ? check : ""}</button>`).join("") : '<div class="pm-label" style="text-transform:none;letter-spacing:0;font-weight:500">Пока ни одного</div>')
+      + `<button class="pm-item" type="button" role="menuitem" data-proj-add><i class="ic">+</i><span class="pn"><b>Добавить проект</b><span>папка с кодом и канал с напарником</span></span></button>`
+      + (native?.self ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-self-tab><i class="ic">✦</i><span class="pn"><b>Код Cowork</b><span>менять само приложение вместе с Claude</span></span>${selfP && selfP.id === proj?.id ? check : ""}</button>` : "")
+      + (proj ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-open-setup-menu><i class="ic">⚙</i><span class="pn"><b>Настройки проекта</b><span>${esc(proj.kind === "self" ? "Код Cowork" : proj.name)}: папка, канал, права Claude</span></span></button>` : "");
+  }
+  pswitch.addEventListener("click", ev => { ev.stopPropagation(); openPMenu(); });
+  document.addEventListener("click", ev => { if (!pmenu.hidden && !ev.target.closest(".pswitch-wrap")) openPMenu(false); });
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !pmenu.hidden) openPMenu(false); });
+  // collapsible sidebar
+  function setCollapsed(on) { document.body.classList.toggle("collapsed", on); $("[data-expand]").hidden = !on; store.set("cw.collapsed", on ? "1" : ""); }
+  $("[data-collapse]").addEventListener("click", () => setCollapsed(true));
+  $("[data-expand]").addEventListener("click", () => setCollapsed(false));
+  setCollapsed(store.get("cw.collapsed") === "1");
 
   function renderFeed(list, emptyTitle, emptyText) {
     const turns = buildTurns(list);
-    const hello = $("[data-hello]");
-    hello.hidden = turns.length > 0;
-    $("[data-hello-title]").innerHTML = esc(emptyTitle) + '<span class="dot"></span>';
-    $("[data-hello-text]").textContent = emptyText;
+    $("[data-hello]").hidden = turns.length > 0;
+    greet(emptyTitle, emptyText, false);
     const view$ = $('[data-panel="feed"]');
     const atBottom = view$.scrollHeight - view$.scrollTop - view$.clientHeight < 160;
     let lastDay = "";
@@ -703,53 +843,89 @@ button, input, textarea { font: inherit; color: inherit; }
   }
 
   // a chat reads like one conversation: people's messages, then Claude's answer with its steps
-  function renderChat(list, c, emptyTitle, emptyText) {
+  const SUGGEST = [
+    ["Что сейчас в проекте?", "Коротко расскажи, как устроен этот проект и что в нём главное."],
+    ["Что нового у напарника?", "Посмотри последние коммиты и изменения в репозитории и расскажи, что поменялось за сегодня."],
+    ["Найди баги", "Найди в проекте вероятные баги и недочёты, начни с самых важных. Пока ничего не меняй, только список."],
+    ["Предложи следующий шаг", "Посмотри TASKS.md и код и предложи, чем заняться дальше. Пока ничего не меняй."]
+  ];
+  function greet(title, text, withSuggest) {
+    $("[data-hello-title]").innerHTML = esc(title) + '<span class="dot"></span>';
+    $("[data-hello-text]").textContent = text;
+    $("[data-suggest]").innerHTML = withSuggest ? SUGGEST.map(([h, t]) => `<button type="button" data-suggest-item="${esc(t)}"><b>${esc(h)}</b>${esc(cut(t, 70))}</button>`).join("") : "";
+  }
+  // folded steps stay as the user left them; live ones open while Claude works
+  const userOpen = new Set();
+  document.addEventListener("click", ev => {
+    const sum = ev.target.closest("details.tools > summary"); if (!sum) return;
+    const k = sum.parentElement.dataset.k;
+    if (sum.parentElement.open) userOpen.delete(k); else userOpen.add(k);
+  });
+  const toolSummary = steps => {
+    const files = new Set(steps.filter(s => s.event === "edit").map(s => s.file)).size;
+    const parts = [];
+    if (files) parts.push("изменил " + plural(files, "файл", "файла", "файлов"));
+    const reads = steps.filter(s => s.event === "tool").length; if (reads) parts.push(plural(reads, "действие", "действия", "действий"));
+    const cmds = steps.filter(s => s.event === "bash").length; if (cmds) parts.push(plural(cmds, "команда", "команды", "команд"));
+    for (const k of ["commit", "push", "pr"]) if (steps.some(s => s.event === k)) parts.push({ commit: "коммит", push: "push", pr: "pull request" }[k]);
+    return parts.join(", ") || "шаги";
+  };
+  // a chat reads like one conversation: people's messages on the right, Claude's answers with folded steps on the left
+  function renderChat(list, c, emptyTitle, emptyText, withSuggest) {
     const run = c ? activeRun(c.id) : null;
-    const items = list.filter(e => !HIDDEN.has(e.event));
+    const items = list.filter(e => !HIDDEN.has(e.event) && e.event !== "start" && e.event !== "end");
     $("[data-hello]").hidden = items.length > 0 || !!run;
-    $("[data-hello-title]").innerHTML = esc(emptyTitle) + '<span class="dot"></span>';
-    $("[data-hello-text]").textContent = emptyText;
+    greet(emptyTitle, emptyText, withSuggest);
     const view$ = $('[data-panel="feed"]');
     const atBottom = view$.scrollHeight - view$.scrollTop - view$.clientHeight < 160;
     const taken = new Set(list.filter(e => e.event === "take").map(e => e.ask));
-    const out = []; let lastDay = "", group = null;
+    const out = []; let group = null;
     const flushGroup = () => {
       if (!group) return;
-      let body = "", open = false;
+      let body = "", steps = [], k = 0, status = "";
+      const flushSteps = (live) => {
+        if (!steps.length) return;
+        const key = group.key + ":" + (k++);
+        const lis = steps.map(s => {
+          const cls = (["commit", "push", "pr"].includes(s.event) ? "key" : "") + (s.local ? " local" : "");
+          const txt = s.event === "edit" ? `<span class="t" style="flex:none">Изменил</span><code>${esc(s.file || s.text)}</code>`
+            : s.event === "bash" ? `<code>${esc(s.text)}</code>`
+            : s.event === "tool" ? `<span class="t" style="flex:none">${esc(s.label || "")}</span>${s.text ? `<code>${esc(s.text)}</code>` : ""}`
+            : `<span class="t">${esc(s.text)}</span>`;
+          return `<li class="${cls}">${ICON[s.event] || ICON.bash}${txt}</li>`;
+        }).join("");
+        const open = live || userOpen.has(key);
+        body += `<details class="tools" data-k="${key}" ${open ? "open" : ""}><summary>${live ? '<span class="spin"></span>' : ICON.tool}<span>${live ? "Работает · " : ""}${esc(toolSummary(steps))}</span><svg class="chev" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></summary><ul class="steps">${lis}</ul></details>`;
+        steps = [];
+      };
       for (const s of group.items) {
-        if (s.event === "reply") { if (open) { body += "</ul>"; open = false; } body += replyHtml(s.full || s.text, s.err ? "err" : ""); continue; }
-        const cls = (s.event === "idle" ? "done" : ["commit", "push", "pr"].includes(s.event) ? "key" : "") + (s.local ? " local" : "");
-        const txt = s.event === "edit" ? `<span class="t" style="flex:none">Изменил</span><code>${esc(s.file || s.text)}</code>`
-          : s.event === "bash" ? `<code>${esc(s.text)}</code>`
-          : s.event === "tool" ? `<span class="t" style="flex:none">${esc(s.label || "")}</span>${s.text ? `<code>${esc(s.text)}</code>` : ""}`
-          : `<span class="t">${esc(s.event === "idle" ? s.text : s.text)}</span>`;
-        if (!open) { body += '<ul class="steps">'; open = true; }
-        body += `<li class="${cls}">${ICON[s.event] || ICON.bash}${txt}</li>`;
+        if (s.event === "reply") { flushSteps(false); body += replyHtml(s.full || s.text, s.err ? "err" : ""); continue; }
+        if (s.event === "idle") { if (/Остановлено|не смог/.test(s.text)) status = s.text; continue; }
+        steps.push(s);
       }
-      if (open) body += "</ul>";
+      flushSteps(!!group.live && !group.live.trim());
       if (group.live) body += (group.live.trim() ? replyHtml(group.live, "streaming") : "") + '<span class="typing" aria-label="Claude работает"><i></i><i></i><i></i></span>';
+      if (status) body += `<div class="ai-status">${esc(status)}</div>`;
       const fresh = !shown.has(group.key); shown.add(group.key);
-      out.push(`<article class="turn claude ${fresh ? "fresh" : ""}"><span class="av">✦</span><div style="min-width:0"><div class="t-who"><span class="t-name">Claude</span><span class="t-time">${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</span></div>${body}</div></article>`);
+      out.push(`<div class="msg ai ${fresh ? "fresh" : ""}"><span class="aiic">✦</span><div class="aibody"><div class="meta"><b>Claude</b>${hhmm(group.t)}${group.host ? " · на компьютере " + esc(group.host) : ""}</div>${body}</div></div>`);
       group = null;
     };
     for (const e of items) {
-      const d = dayOf(e.t); if (d !== lastDay) { flushGroup(); out.push(`<div class="day"><span>${d}</span></div>`); lastDay = d; }
       if (HUMAN.has(e.event)) {
         flushGroup();
-        const isNote = e.event === "note", key = "h" + (e.cid || e.seq);
+        const isNote = e.event === "note", key = "h" + (e.cid || e.seq), mine = e.user === me;
         const fresh = !shown.has(key); shown.add(key);
-        const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди, Claude закончит текущее и возьмётся" : "ждёт компьютер " + esc(e.to || c?.user || "") + ": там должен быть открыт Cowork"}</div>` : "";
-        out.push(`<article class="turn ${fresh ? "fresh" : ""} ${e.user === me ? "mine" : ""}">${av(e.user, false)}<div style="min-width:0"><div class="t-who"><span class="t-name">${esc(e.user)}</span><span class="t-time">${hhmm(e.t)}</span></div><div class="bubble ${isNote ? "note" : ""}"><span class="tag">${isNote ? "сообщение, Claude не видит" : "для Claude"}</span>${esc(e.full || e.text)}</div>${waiting}</div></article>`);
+        const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди: Claude закончит текущее и возьмётся" : "ждёт компьютер " + esc(e.to || c?.user || "") + ", там должен быть открыт Cowork"}</div>` : "";
+        out.push(`<div class="msg user ${mine ? "mine" : "partner"} ${isNote ? "note" : ""} ${fresh ? "fresh" : ""}" style="--pc:${colorOf(e.user)}"><div class="meta">${isNote ? "<i>только напарнику</i> · " : ""}<b>${mine ? "Вы" : esc(e.user)}</b>${hhmm(e.t)}${av(e.user, false)}</div><div class="ubub">${esc(e.full || e.text)}</div>${waiting}</div>`);
         continue;
       }
-      if (e.event === "start" || e.event === "end") continue;
-      if (!group) group = { key: "c" + e.seq, t: e.t, items: [], host: e.user !== (c?.user || e.user) || (c && !c.mine) ? e.user : "" };
+      if (!group) group = { key: "c" + (e.cid || e.seq), t: e.t, items: [], host: c && !c.mine ? e.user : "" };
       const prev = group.items.at(-1);
       if (!(e.event === "edit" && prev && prev.event === "edit" && prev.file === e.file)) group.items.push(e);
     }
     if (run) { if (!group) group = { key: "c-live-" + run.id, t: Date.now(), items: [], host: run.user !== me ? run.user : "" }; group.live = run.live || " "; }
     flushGroup();
-    $("[data-feed]").innerHTML = out.join("");
+    $("[data-feed]").innerHTML = `<div class="chatcol">${out.join("")}</div>`;
     if (atBottom) requestAnimationFrame(() => { view$.scrollTop = view$.scrollHeight; });
   }
 
@@ -767,10 +943,11 @@ button, input, textarea { font: inherit; color: inherit; }
     // title
     const c = currentChat();
     if (view === "chat") {
-      $("[data-title]").innerHTML = esc(c ? cut(c.title, 60) : "Новый чат") + '<span class="dot"></span>';
+      $("[data-title]").innerHTML = esc(c ? cut(c.title, 70) : "Новый чат") + '<span class="dot"></span>';
       $("[data-subtitle]").textContent = c && !c.mine ? `Общий чат · Claude работает на компьютере ${c.user}` : `Общий чат · Claude работает на вашем компьютере, в папке ${proj?.folder ? proj.folder.split(/[\\/]/).filter(Boolean).pop() : "проекта"}`;
       const list = c ? events.filter(e => chatOf(e) === c.id) : [];
-      renderChat(list, c, c && !c.mine ? "Пусто" : "Hi", c && !c.mine ? "В этом чате пока ничего нет. Напишите Claude, ответ придёт с компьютера " + c.user + "." : "Напишите задание внизу. Напарник видит этот чат и может писать Claude сюда же, как будто вы сидите за одним компьютером.");
+      if (!proj) renderChat([], null, "Hi", "Добавьте первый проект: выберите папку с кодом, и можно говорить с Claude. Карточка «Проект» слева сверху.", false);
+      else renderChat(list, c, c && !c.mine ? "Пусто" : "Чем займёмся", c && !c.mine ? `Это чат ${c.user}. Напишите Claude, ответ придёт с компьютера ${c.user}.` : `Проект «${proj.name}». Напарник видит этот чат и может писать Claude сюда же, как будто вы сидите за одним компьютером.`, !!(c ? c.mine : true) && canClaude());
     } else {
       $("[data-title]").innerHTML = VIEWS[view][0] + '<span class="dot"></span>';
       $("[data-subtitle]").textContent = VIEWS[view][1];
@@ -823,12 +1000,23 @@ button, input, textarea { font: inherit; color: inherit; }
   function shownReset() { buildTurns(events).forEach(tr => shown.add(tr.key)); }
   $$("[data-view]").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
   document.addEventListener("click", ev => {
-    const pt = ev.target.closest("[data-proj]"); if (pt) { switchProject(pt.dataset.proj); return; }
-    if (ev.target.closest("[data-proj-add]")) { openSetup(true); return; }
-    if (ev.target.closest("[data-self-tab]")) { openSelf(); return; }
+    const del = ev.target.closest("[data-del-chat]"); if (del) { ev.stopPropagation(); deleteChat(del.dataset.delChat); return; }
+    if (ev.target.closest("[data-open-setup-menu]")) { openPMenu(false); openSetup(false); return; }
+    if (ev.target.closest("[data-suggest-item]")) { const t = ev.target.closest("[data-suggest-item]").dataset.suggestItem; target = "claude"; msg.value = t; grow(); say.requestSubmit(); return; }
+    const pt = ev.target.closest("[data-proj]"); if (pt) { openPMenu(false); switchProject(pt.dataset.proj); return; }
+    if (ev.target.closest("[data-proj-add]")) { openPMenu(false); openSetup(true); return; }
+    if (ev.target.closest("[data-self-tab]")) { openPMenu(false); openSelf(); return; }
     const ch = ev.target.closest("[data-chat]"); if (ch) { show("chat", ch.dataset.chat); $("[data-say] textarea").focus(); return; }
     const go = ev.target.closest("[data-goto-chat]"); if (go) { ev.preventDefault(); show("chat", go.dataset.gotoChat); }
   });
+  document.addEventListener("keydown", ev => { const ch = ev.target.closest?.("[data-chat]"); if (ch && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); ch.click(); } });
+  function deleteChat(id) {
+    const c = myChats.find(x => x.id === id); if (!c) return;
+    if (!confirm(`Удалить чат «${c.title}»? Он пропадёт у вас, у напарника останется до перезапуска.`)) return;
+    myChats = myChats.filter(x => x.id !== id); saveChats();
+    events = events.filter(e => chatOf(e) !== id); persistSoon();
+    if (chatId === id) { chatId = null; const next = chatList().find(x => x.mine); show(next ? "chat" : "feed", next?.id); } else render();
+  }
   function newChat() {
     if (!proj) { openSetup(true); return; }
     const empty = myChats.find(c => c.title === "Новый чат" && !events.some(e => e.chat === c.id));
@@ -1000,14 +1188,14 @@ button, input, textarea { font: inherit; color: inherit; }
     sendBtn.innerHTML = stop ? STOP_ICON : SEND_ICON;
     sendBtn.setAttribute("aria-label", stop ? "Остановить Claude" : "Отправить");
     sendBtn.disabled = stop ? false : !msg.value.trim();
-    if (!hint.dataset.sticky) hint.textContent = t === "claude" ? (partnerChat ? `Enter, отправить · Claude выполнит на компьютере ${c.user}, ответ увидите оба` : "Enter, отправить · Shift+Enter, новая строка · напарник видит этот чат и может писать сюда же") : "Enter, отправить · Shift+Enter, новая строка · Claude эти сообщения не видит";
+    if (!hint.dataset.sticky) hint.textContent = t === "claude" ? (partnerChat ? `Enter, отправить · выполнит компьютер ${c.user}, ответ увидите оба` : "Enter, отправить · напарник видит этот чат и может писать сюда же") : "Enter, отправить · это видит только напарник, не Claude";
   }
   $$("[data-target]").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.target === "claude" && !canClaude()) { if (native?.claude) openSetup(false); return; }
     target = b.dataset.target; store.set("cw.target", target); renderComposer(); msg.focus();
   }));
   function flash(text) { hint.dataset.sticky = "1"; hint.textContent = text; clearTimeout(flash.t); flash.t = setTimeout(() => { delete hint.dataset.sticky; renderComposer(); }, 6000); }
-  const grow = () => { msg.style.height = "auto"; msg.style.height = Math.min(msg.scrollHeight, 160) + "px"; renderComposer(); };
+  const grow = () => { msg.style.height = "auto"; msg.style.height = Math.min(Math.max(msg.scrollHeight, 58), 220) + "px"; renderComposer(); };
   msg.addEventListener("input", grow);
   msg.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); say.requestSubmit(); } });
   say.addEventListener("submit", async ev => {
