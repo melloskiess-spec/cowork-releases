@@ -730,7 +730,7 @@ body[data-theme] .msg.note .ubub, .msg.note .ubub { background: color-mix(in srg
     </div>
     <label>Название проекта<input name="pname" autocomplete="off" placeholder="Например, Сайт"></label>
     <details class="adv" data-setup-adv><summary>Дополнительно: канал связи с напарником</summary><div>
-    <label>Канал (одинаковый у вас обоих, подставляется сам)<input name="topic" autocomplete="off" required></label>
+    <label>Канал (одинаковый у вас обоих, подставляется сам)<input name="topic" autocomplete="off"></label>
     <div class="two">
       <label>Сервер<input name="server" autocomplete="off" value="https://ntfy.sh"></label>
       <label>Токен, если сервер свой<input name="token" type="password" autocomplete="off"></label>
@@ -1495,8 +1495,10 @@ body[data-theme] .msg.note .ubub, .msg.note .ubub { background: color-mix(in srg
     proj = null; switchProject(projects[0]?.id);
   });
   form.addEventListener("submit", ev => {
+    // the channel field is folded away under «Дополнительно»: a new project gets its own random channel
+    if (!form.topic.value.trim()) form.topic.value = "cowork-" + Array.from(crypto.getRandomValues(new Uint8Array(9)), b => b.toString(36).padStart(2, "0")).join("").slice(0, 16);
     const name = form.me.value.trim(), topic = form.topic.value.trim();
-    if (!name || !topic) { ev.preventDefault(); (name ? form.topic : form.me).focus(); return; }
+    if (!name) { ev.preventDefault(); form.me.focus(); return; }
     me = name;
     const folder = form.folder.value;
     const fields = { name: form.pname.value.trim() || folder.split(/[\\/]/).filter(Boolean).pop() || "Проект", folder, topic, server: form.server.value.trim().replace(/\/+$/, "") || "https://ntfy.sh", token: form.token.value.trim(), perm: form.perm.value };
@@ -1552,7 +1554,9 @@ body[data-theme] .msg.note .ubub, .msg.note .ubub { background: color-mix(in srg
     const stop = t !== "partner" && !!run && !msg.value.trim() && !atts.length;
     sendBtn.classList.toggle("stop", stop);
     const toLabel = t === "partner" ? (mate || "Напарнику") : t === "team" ? "Обоим Claude" : partnerChat ? "Claude " + c.user : "Claude";
-    sendBtn.innerHTML = stop ? STOP_ICON : `<span class="to">${esc(toLabel)}</span>${SEND_ICON}`;
+    // rewrite only on change: replacing the button's insides between mousedown and mouseup swallows the click
+    const btnHtml = stop ? STOP_ICON : `<span class="to">${esc(toLabel)}</span>${SEND_ICON}`;
+    if (sendBtn.dataset.html !== btnHtml) { sendBtn.innerHTML = btnHtml; sendBtn.dataset.html = btnHtml; }
     sendBtn.setAttribute("aria-label", stop ? "Остановить Claude" : "Отправить: " + toLabel);
     sendBtn.disabled = stop ? false : !msg.value.trim() && !atts.length;
     if (!hint.dataset.sticky) hint.textContent = t === "team" ? `Enter · ведущий Claude (${partnerChat ? c.user : "ваш"}) разделит задачу с Claude ${partnerChat ? "вашим" : mate}` : t === "claude" ? (partnerChat ? `Enter, отправить · выполнит компьютер ${c.user}, ответ увидите оба` : "Enter, отправить · напарник видит этот чат и может писать сюда же") : "Enter, отправить · это видит только напарник, не Claude";
@@ -1979,14 +1983,22 @@ ${FENCE}
     if (!cmd) { const g = await native.pane.guess({ cwd: proj.folder }); cmd = g?.cmd || ""; $("[data-run-cmd]").value = cmd; }
     if (!cmd) { $("[data-run-cmd]").focus(); flash("Не нашёл, как запускать это приложение. Впишите команду, например npm run dev, или попросите Claude её подсказать."); return; }
     proj.runCmd = cmd; saveProjects();
-    appLog = "$ " + cmd + "\n"; native.pane.start({ id: appId(), cwd: proj.folder, cmd });
+    // the run bar and log must be visible while it starts (an open artifact hides them)
+    pane.classList.remove("art-mode"); showLog(true);
+    appLog = "$ " + cmd + "\n"; renderRun(); native.pane.start({ id: appId(), cwd: proj.folder, cmd });
+    flash("Запускаю: " + cmd);
+    clearTimeout(appWait); appWait = setTimeout(() => { if (appRunning && !appUrl) { showLog(true); flash("Приложение запущено, но адрес localhost пока не появился. Посмотрите лог под строкой запуска."); } }, 25000);
   }
+  let appWait = 0;
+  function showLog(on) { const l = $("[data-run-log]"); l.hidden = !on; if (on) requestAnimationFrame(() => { l.scrollTop = l.scrollHeight; }); }
   $("[data-run]").addEventListener("click", () => { if (appRunning) native?.pane?.stop(appId()); else startApp(); });
   // the header button: one click to run the app and watch it change live (the partner sees it too)
   $("[data-app-btn]").addEventListener("click", () => {
     openPane(true);
     if (!native?.pane) { flash("Здесь виден экран приложения напарника, когда он его запускает."); return; }
-    if (appRunning && appUrl) showUrl(appUrl); else if (!appRunning) startApp();
+    if (appRunning && appUrl) showUrl(appUrl);
+    else if (appRunning) { pane.classList.remove("art-mode"); showLog(true); flash("Приложение запускается, адрес ещё не появился. Лог под строкой запуска."); }
+    else startApp();
   });
   $("[data-run-log-toggle]").addEventListener("click", () => { const l = $("[data-run-log]"); l.hidden = !l.hidden; l.scrollTop = l.scrollHeight; });
   native?.pane?.onEvent(m => {
@@ -1995,7 +2007,17 @@ ${FENCE}
     if (m.log) { appLog += m.log; const l = $("[data-run-log]"); if (!l.hidden) requestAnimationFrame(() => { l.scrollTop = l.scrollHeight; }); }
     if (m.url) { appUrl = m.url; if (!frame.getAttribute("src")?.startsWith(m.url.replace(/\/$/, ""))) setTimeout(() => showUrl(m.url), 600); }
     if (m.reload && appUrl && frame.getAttribute("src")?.startsWith(appUrl.replace(/\/$/, ""))) { frame.src = frame.getAttribute("src"); setTimeout(sendShot, 900); }
-    if (m.done) { appRunning = false; appUrl = ""; appLog += m.error ? "\n" + m.error + "\n" : `\n[остановлено${m.code != null ? ", код " + m.code : ""}]\n`; }
+    if (m.url) { clearTimeout(appWait); }
+    if (m.done) {
+      const failed = m.error || (m.code != null && m.code !== 0);
+      appRunning = false; appUrl = ""; clearTimeout(appWait);
+      appLog += m.error ? "\n" + m.error + "\n" : `\n[остановлено${m.code != null ? ", код " + m.code : ""}]\n`;
+      if (failed) {
+        pane.classList.remove("art-mode"); showLog(true);
+        const last = (m.error || appLog.trim().split("\n").filter(x => x.trim() && !x.startsWith("[остановлено")).pop() || "").slice(0, 160);
+        flash("Приложение не запустилось" + (last ? ": " + last : ". Лог под строкой запуска."));
+      }
+    }
     renderRun();
   });
   try { if (localStorage.getItem("cw.pane")) setTimeout(() => openPane(true), 0); } catch {}

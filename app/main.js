@@ -504,7 +504,7 @@ ipcMain.on("app:start", (e, { id, cwd, cmd }) => {
     const t = String(d).replace(/\x1b\[[0-9;]*[A-Za-z]/g, "");
     send({ log: t });
     const m = t.match(/https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1?\])(?::\d+)?[^\s'"<>)\]]*/);
-    if (m) send({ url: m[0].replace("0.0.0.0", "localhost") });
+    if (m) send({ url: m[0].replace(/0\.0\.0\.0|\[::\]/, "localhost") });
   };
   p.stdout.on("data", onOut); p.stderr.on("data", onOut);
   p.on("error", err => { apps.delete(id); send({ done: true, error: String(err.message || err) }); });
