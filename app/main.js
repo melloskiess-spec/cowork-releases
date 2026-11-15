@@ -445,22 +445,45 @@ ipcMain.handle("pane:capture", async (_e, r) => {
 // запуск приложения проекта (например, npm run dev): живёт, пока его не остановят; адрес localhost ловим из вывода
 const apps = new Map();
 // что запускать: скрипт dev/start из package.json, иначе встроенный сервер для папки с index.html
-ipcMain.handle("app:guess", (_e, { cwd }) => {
+ipcMain.handle("app:guess", (_e, { cwd, cmd }) => {
   try {
-    const pj = path.join(cwd, "package.json");
-    if (fs.existsSync(pj)) {
-      const sc = JSON.parse(fs.readFileSync(pj, "utf8")).scripts || {};
-      const pm = fs.existsSync(path.join(cwd, "pnpm-lock.yaml")) ? "pnpm" : fs.existsSync(path.join(cwd, "yarn.lock")) ? "yarn" : "npm";
-      const k = ["dev", "start", "serve", "preview"].find(x => sc[x]);
-      if (k) return { cmd: (!fs.existsSync(path.join(cwd, "node_modules")) ? pm + " install && " : "") + (pm === "npm" ? (k === "start" ? "npm start" : "npm run " + k) : pm + " " + k) };
+    const has = (d, f) => fs.existsSync(path.join(d, f));
+    // a saved npm command for a folder without package.json (it is in a subfolder, or it is not a node project)
+    if (cmd) return { stale: /^\s*(npm|pnpm|yarn|npx)\b/.test(cmd) && !has(cwd, "package.json") };
+    const py = isWin ? "python" : "python3";
+    const forDir = d => {
+      if (has(d, "package.json")) {
+        const pj = JSON.parse(fs.readFileSync(path.join(d, "package.json"), "utf8")), sc = pj.scripts || {};
+        const pm = has(d, "pnpm-lock.yaml") ? "pnpm" : has(d, "yarn.lock") ? "yarn" : "npm";
+        const inst = !has(d, "node_modules") ? pm + " install && " : "";
+        const k = ["dev", "start", "serve", "preview"].find(x => sc[x]);
+        if (k) return inst + (pm === "npm" ? (k === "start" ? "npm start" : "npm run " + k) : pm + " " + k);
+        const main = pj.main || ["index.js", "bot.js", "main.js", "app.js", "server.js"].find(f => has(d, f));
+        if (main && has(d, main)) return inst + "node " + JSON.stringify(main);
+      }
+      if (has(d, "manage.py")) return py + " manage.py runserver";
+      const pyf = ["main.py", "bot.py", "app.py", "run.py", "server.py"].find(f => has(d, f));
+      if (pyf) return py + " " + pyf;
+      if (["index.html", "public/index.html", "dist/index.html", "src/index.html"].some(f => has(d, f))) return "cowork:static";
+      return "";
+    };
+    const here = forDir(cwd);
+    if (here) return { cmd: here };
+    // nothing at the top: look one level down (frontend/, bot/, app/ ...)
+    const pref = ["frontend", "web", "client", "app", "site", "bot", "server", "backend", "src"];
+    const subs = fs.readdirSync(cwd, { withFileTypes: true }).filter(x => x.isDirectory() && !/^(\.|node_modules$|venv$|env$|__pycache__$)/.test(x.name)).map(x => x.name)
+      .sort((a, b) => ((pref.indexOf(a.toLowerCase()) + 1 || 99) - (pref.indexOf(b.toLowerCase()) + 1 || 99)));
+    for (const sub of subs) {
+      const c = forDir(path.join(cwd, sub));
+      if (c) return { cmd: c === "cowork:static" ? "cowork:static:" + sub : `cd ${JSON.stringify(sub)} && ${c}` };
     }
-    if (["index.html", "public/index.html", "dist/index.html", "src/index.html"].some(f => fs.existsSync(path.join(cwd, f)))) return { cmd: "cowork:static" };
   } catch {}
   return {};
 });
 // встроенный сервер: отдаёт файлы проекта и говорит панели обновиться, когда файлы меняются
-function startStatic(id, cwd, send) {
+function startStatic(id, cwd, send, sub) {
   const http = require("http");
+  if (sub && fs.existsSync(path.join(cwd, sub))) cwd = path.join(cwd, sub);
   const root = ["", "public", "dist", "src"].map(d => path.join(cwd, d)).find(d => fs.existsSync(path.join(d, "index.html"))) || cwd;
   const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff", ".mp4": "video/mp4", ".txt": "text/plain; charset=utf-8" };
   const srv = http.createServer((req, res) => {
@@ -494,7 +517,7 @@ ipcMain.on("app:start", (e, { id, cwd, cmd }) => {
   const send = m => { if (!e.sender.isDestroyed()) e.sender.send("app:event", { id, ...m }); };
   if (apps.has(id)) return send({ running: true });
   if (!cwd || !fs.existsSync(cwd) || !String(cmd || "").trim()) return send({ done: true, error: "Нет папки проекта или команды запуска." });
-  if (cmd === "cowork:static") return startStatic(id, cwd, send);
+  if (String(cmd).startsWith("cowork:static")) return startStatic(id, cwd, send, String(cmd).slice(14));
   let p;
   try { p = spawn(String(cmd), [], { cwd, shell: true, windowsHide: true, detached: !isWin, env: claudeEnv({ BROWSER: "none", FORCE_COLOR: "0" }) }); }
   catch (err) { return send({ done: true, error: String(err.message || err) }); }

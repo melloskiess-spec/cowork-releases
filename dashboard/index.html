@@ -331,7 +331,10 @@ body.pane-open .top-btn { padding: 8px 10px; }
 body.pane-open .pchip { padding-right: 3px; }
 body.pane-open .pchip > :not(:first-child) { display: none; }
 body.pane-open [data-live-text] { display: none; }
-body.pane-open .live { padding-left: 10px; padding-right: 10px; }
+/* with the view pane open the status shrinks to a plain dot (green = connected), the words go to the tooltip */
+body.pane-open .live, body.pane-open .live.ok { padding: 6px; background: none; box-shadow: none; }
+body.pane-open .live .ldot { width: 9px; height: 9px; margin: 0; }
+body.pane-open .live.ok .ldot { background: var(--ok, #19a463); }
 .top-btn.running { border-color: var(--ok); color: var(--c1); }
 .top-btn.running svg { fill: var(--ok); stroke: var(--ok); }
 body.pane-open [data-pane-toggle] { background: var(--c3s); color: var(--c3d); border-color: color-mix(in srgb, var(--c3) 45%, transparent); }
@@ -1028,6 +1031,7 @@ body[data-theme] .msg.note .ubub, .msg.note .ubub { background: color-mix(in srg
     $("[data-conn-sub]").textContent = proj ? `${me || "без имени"} · ${proj.name}` : "Создайте проект в меню слева";
     $("[data-live]").className = "live" + (ok ? " ok" : "");
     $("[data-live-text]").textContent = ok ? "в эфире" : conn === "wait" ? "подключаюсь" : "офлайн";
+    $("[data-live]").title = ok ? "Связь с напарником есть" : conn === "wait" ? "Подключаюсь к каналу связи" : "Нет связи с каналом напарника";
   }
 
   const GROUPS = [["Сегодня", 0], ["Вчера", 1], ["Последние 7 дней", 7], ["Раньше", Infinity]];
@@ -1980,7 +1984,9 @@ ${FENCE}
     if (!native?.pane) { flash("Запуск работает в приложении Cowork."); return; }
     if (!proj?.folder) { openSetup(false); return; }
     let cmd = $("[data-run-cmd]").value.trim();
-    if (!cmd) { const g = await native.pane.guess({ cwd: proj.folder }); cmd = g?.cmd || ""; $("[data-run-cmd]").value = cmd; }
+    if (cmd && (await native.pane.guess({ cwd: proj.folder, cmd }))?.stale) { const g = await native.pane.guess({ cwd: proj.folder }); if (g?.cmd) { flash("В корне папки нет package.json, запускаю: " + g.cmd); cmd = g.cmd; } }
+    if (!cmd) { const g = await native.pane.guess({ cwd: proj.folder }); cmd = g?.cmd || ""; }
+    $("[data-run-cmd]").value = cmd;
     if (!cmd) { $("[data-run-cmd]").focus(); flash("Не нашёл, как запускать это приложение. Впишите команду, например npm run dev, или попросите Claude её подсказать."); return; }
     proj.runCmd = cmd; saveProjects();
     // the run bar and log must be visible while it starts (an open artifact hides them)
