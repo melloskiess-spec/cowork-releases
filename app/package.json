@@ -1,7 +1,7 @@
 {
   "name": "cowork-live",
   "productName": "Cowork",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "description": "Живая панель совместной работы двух пользователей Claude Code",
   "author": "Cowork",
   "license": "MIT",

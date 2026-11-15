@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld("coworkNative", {
     pickBin: () => ipcRenderer.invoke("claude:pick-bin"),
     install: () => ipcRenderer.invoke("claude:install"),
     status21: () => ipcRenderer.invoke("claude:21st-status"),
+    commands: opts => ipcRenderer.invoke("claude:commands", opts),
     login21: () => ipcRenderer.invoke("claude:21st-login"),
     saveImage: opts => ipcRenderer.invoke("claude:save-image", opts),
     pickFolder: () => ipcRenderer.invoke("claude:pick-folder"),
@@ -29,6 +30,7 @@ contextBridge.exposeInMainWorld("coworkNative", {
     capture: rect => ipcRenderer.invoke("pane:capture", rect),
     start: opts => ipcRenderer.send("app:start", opts),
     stop: id => ipcRenderer.send("app:stop", id),
+    guess: opts => ipcRenderer.invoke("app:guess", opts),
     onEvent: fn => ipcRenderer.on("app:event", (_e, m) => fn(m))
   },
   self: {

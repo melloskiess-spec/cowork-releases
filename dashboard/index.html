@@ -309,11 +309,22 @@ body.pane-open .app { grid-template-columns: 284px minmax(0, 1fr) minmax(380px, 
 body.pane-open.collapsed .app { grid-template-columns: 0 minmax(0, 1fr) minmax(380px, 50%); }
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; margin: 10px 10px 10px 0; border-radius: var(--r1); background: var(--c2); color: var(--c1); overflow: hidden; }
 .pane[hidden] { display: none !important; }
+[data-say].box { position: relative; }
+.slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 30; max-height: 320px; overflow: auto; padding: 6px; border-radius: 18px; background: var(--c2); color: var(--c1); box-shadow: 0 0 0 1px var(--line-l), 0 18px 40px -18px rgba(20,16,40,.35); }
+.slash[hidden] { display: none; }
+.slash button { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 8px 12px; border: 0; border-radius: 12px; background: none; color: inherit; text-align: left; cursor: pointer; }
+.slash button[aria-selected="true"] { background: var(--c3s); }
+.slash code { flex: none; font: 600 13px var(--mono, monospace); color: var(--c3d); }
+.slash span { min-width: 0; font-size: 12.5px; color: var(--c6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slash i { margin-left: auto; flex: none; font-style: normal; font-size: 11px; color: var(--c6); opacity: .8; }
+.slash .none { padding: 10px 12px; font-size: 13px; color: var(--c6); }
 .top .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.pane-open .top-btn span { display: none; }
 body.pane-open .top-btn { padding: 8px 10px; }
 body.pane-open .pchip { padding-right: 3px; }
 body.pane-open .pchip > :not(:first-child) { display: none; }
+.top-btn.running { border-color: var(--ok); color: var(--c1); }
+.top-btn.running svg { fill: var(--ok); stroke: var(--ok); }
 body.pane-open [data-pane-toggle] { background: var(--c3s); color: var(--c3d); border-color: color-mix(in srgb, var(--c3) 45%, transparent); }
 .pane-bar { display: flex; align-items: center; gap: 6px; padding: 10px 10px 8px; border-bottom: 1px solid var(--line-l); }
 .pane-btn { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--c6); cursor: pointer; }
@@ -570,6 +581,7 @@ body[data-theme] .msg.note .ubub { background: none; }
         <button class="top-btn" type="button" data-preview title="Открыть приложение из вашей копии кода, с последними правками">Предпросмотр</button>
         <button class="top-btn primary" type="button" data-release title="Claude поднимет версию, закоммитит и запушит, GitHub выпустит обновление">Выпустить обновление</button>
       </div>
+      <button class="top-btn" type="button" data-app-btn title="Запустить приложение проекта и смотреть, как оно меняется. Напарник видит то же"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></svg><span>Приложение</span></button>
       <button class="top-btn" type="button" data-pane-toggle title="Панель просмотра: артефакты, приложение, сайты"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M14 4v16"/></svg><span>Просмотр</span></button>
       <div class="presence" data-presence></div>
       <div class="live" data-live><span class="ldot"></span><span data-live-text>офлайн</span></div>
@@ -611,7 +623,8 @@ body[data-theme] .msg.note .ubub { background: none; }
       <form data-say class="box">
         <div class="atts" data-atts hidden></div>
         <input type="file" multiple hidden data-file>
-        <textarea rows="2" name="message" placeholder="Написать Claude…" aria-label="Сообщение"></textarea>
+        <div class="slash" data-slash hidden role="listbox" aria-label="Команды"></div>
+        <textarea rows="2" name="message" placeholder="Написать Claude… (/ — команды и скиллы)" aria-label="Сообщение"></textarea>
         <div class="bar">
           <div class="target" role="group" aria-label="Кому"><button type="button" data-target="claude" aria-pressed="false">Claude</button><button type="button" data-target="team" aria-pressed="false" title="Ваш Claude и Claude напарника делят задачу">Оба Claude</button><button type="button" data-target="partner" aria-pressed="false">Напарнику</button></div>
           <button type="button" class="clip" data-clip aria-label="Приложить файл" title="Приложить фото или файл (или Ctrl+V, или перетащите)"><svg viewBox="0 0 24 24"><path d="m21 11-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
@@ -633,7 +646,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     </div>
     <div class="pane-run" data-pane-run>
       <span class="run-dot" data-run-dot></span>
-      <input data-run-cmd spellcheck="false" placeholder="Команда запуска, например npm run dev" aria-label="Команда запуска">
+      <input data-run-cmd spellcheck="false" placeholder="Команда запуска, например npm run dev (пусто: Cowork подберёт сам)" aria-label="Команда запуска">
       <button class="pane-pill" type="button" data-run>Запустить</button>
       <button class="pane-pill ghost" type="button" data-run-log-toggle>Лог</button>
     </div>
@@ -798,7 +811,7 @@ body[data-theme] .msg.note .ubub { background: none; }
   // ---------- state ----------
   const people = new Map(), seen = new Set(), seenCid = new Set(), shown = new Set(), runs = new Map(), remoteLive = new Map(), queues = new Map(), queuedAsks = new Set();
   let my21 = false;   // 21st.dev signed in on this computer
-  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop", "wait", "view"]);
+  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop", "wait", "view", "cmds"]);
   let events = [], seq = 0, es = null, conn = "off", view = "chat", chatId = null, target = store.get("cw.target") || "claude", ccOk = false, shareCommands = false, repoUrl = "";
 
   const chatOf = e => e.chat || (e.session ? "s-" + e.user + "-" + e.session : null);
@@ -1554,7 +1567,60 @@ body[data-theme] .msg.note .ubub { background: none; }
   const attLocal = list => ({ imgLocal: (list || []).filter(i => !i.f).map(i => i.local), fileLocal: (list || []).filter(i => i.f).map(i => ({ n: i.n, s: i.s, u: i.u })) });
   const grow = () => { msg.style.height = "auto"; msg.style.height = Math.min(Math.max(msg.scrollHeight, 58), 220) + "px"; renderComposer(); };
   msg.addEventListener("input", grow);
-  msg.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); say.requestSubmit(); } });
+  // ---------- "/" commands: skills, custom commands and plugins of the computer where Claude runs ----------
+  // interactive Claude Code commands that make no sense in a chat run
+  const NO_SLASH = new Set(["clear", "color", "config", "output-style", "effort", "fast", "focus", "mcp", "import", "model", "reload-plugins", "reload-skills", "rename", "usage", "doctor", "autocompact", "advisor", "insights", "recap", "goal", "list-agents", "team-onboarding", "context", "skill-doctor", "exit", "login", "logout", "resume", "theme", "vim", "terminal-setup", "permissions", "hooks", "agents", "status", "statusline", "ide", "upgrade", "bug", "feedback", "privacy-settings", "release-notes", "add-dir", "memory", "cost", "help", "export", "plugin", "plugins"]);
+  const SLASH_RU = { compact: "сжать историю разговора", init: "создать CLAUDE.md для проекта", review: "проверить изменения", "security-review": "проверить безопасность изменений", "code-review": "найти ошибки в изменениях", simplify: "упростить изменённый код", "pr-comments": "комментарии к pull request" };
+  let scanned = [], slashSel = 0, slashItems = [];
+  const cmdKey = () => "cw.cmds." + (proj?.id || "");
+  async function loadScanned() { try { scanned = (await native?.claude?.commands?.({ cwd: proj?.folder || "" })) || []; } catch { scanned = []; } }
+  function localCmds() {
+    let names = []; try { names = JSON.parse(localStorage.getItem(cmdKey()) || "[]"); } catch {}
+    const desc = new Map(scanned.map(x => [x.n, x]));
+    const info = n => desc.get(n) || desc.get(n.split(":").pop()) || {};
+    const list = names.length ? names.map(n => ({ n, d: info(n).d || SLASH_RU[n] || "", src: info(n).src || "" })) : scanned.slice();
+    return list.filter(x => !NO_SLASH.has(x.n));
+  }
+  function cmdList() {
+    const c = currentChat();
+    if (c && !c.mine) { const e = events.findLast?.(x => x.event === "cmds" && x.user === c.user); return Array.isArray(e?.list) ? e.list.filter(x => x && x.n) : []; }
+    return localCmds();
+  }
+  // Claude Code reports its commands when a run starts: remember them and tell the partner (they may write to this Claude)
+  function gotCommands(names) {
+    if (!Array.isArray(names) || !proj) return;
+    const json = JSON.stringify(names.filter(n => typeof n === "string"));
+    let old = ""; try { old = localStorage.getItem(cmdKey()) || ""; localStorage.setItem(cmdKey(), json); } catch {}
+    const mineLast = events.findLast?.(x => x.event === "cmds" && x.user === me);
+    if (json !== old || !mineLast || Date.now() - mineLast.t > 6 * 3600e3) publish({ event: "cmds", list: localCmds().slice(0, 150).map(x => ({ n: x.n, d: cut(x.d || "", 90) || undefined })) });
+  }
+  function renderSlash() {
+    const box = $("[data-slash]"); const v = msg.value;
+    const m = v.match(/^\/([^\s]*)$/);
+    if (!m || target === "partner") { box.hidden = true; slashItems = []; return; }
+    const q = m[1].toLowerCase();
+    const all = cmdList();
+    slashItems = all.filter(x => x.n.toLowerCase().includes(q)).sort((a, b) => (b.n.toLowerCase().startsWith(q) - a.n.toLowerCase().startsWith(q)) || (a.n.includes(":") - b.n.includes(":")) || a.n.localeCompare(b.n)).slice(0, 40);
+    slashSel = Math.min(slashSel, Math.max(0, slashItems.length - 1));
+    box.innerHTML = slashItems.length ? slashItems.map((x, i) => `<button type="button" role="option" data-slash-pick="${i}" aria-selected="${i === slashSel}"><code>/${esc(x.n)}</code><span>${esc(x.d || "")}</span>${x.src ? `<i>${esc(x.src)}</i>` : ""}</button>`).join("")
+      : `<div class="none">${all.length ? "Нет такой команды." : "Список команд появится после первого ответа Claude в этом проекте."}</div>`;
+    box.hidden = false;
+    box.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+  }
+  function pickSlash(i) {
+    const x = slashItems[i]; if (!x) return;
+    msg.value = "/" + x.n + " "; $("[data-slash]").hidden = true; msg.focus(); grow();
+  }
+  $("[data-slash]").addEventListener("mousedown", ev => { const b = ev.target.closest("[data-slash-pick]"); if (b) { ev.preventDefault(); pickSlash(+b.dataset.slashPick); } });
+  msg.addEventListener("input", () => { if (msg.value === "/") { slashSel = 0; loadScanned().then(renderSlash); } renderSlash(); });
+  msg.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== msg || !document.hasFocus()) $("[data-slash]").hidden = true; }, 150));
+  msg.addEventListener("keydown", ev => {
+    const open = !$("[data-slash]").hidden && slashItems.length;
+    if (open && (ev.key === "ArrowDown" || ev.key === "ArrowUp")) { ev.preventDefault(); slashSel = (slashSel + (ev.key === "ArrowDown" ? 1 : -1) + slashItems.length) % slashItems.length; renderSlash(); return; }
+    if (open && (ev.key === "Tab" || (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing))) { ev.preventDefault(); pickSlash(slashSel); return; }
+    if (ev.key === "Escape" && !$("[data-slash]").hidden) { ev.preventDefault(); $("[data-slash]").hidden = true; return; }
+    if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); say.requestSubmit(); }
+  });
   say.addEventListener("submit", async ev => {
     ev.preventDefault();
     const c = currentChat(), team = $('[data-target="team"]').getAttribute("aria-pressed") === "true", toClaude = team || $('[data-target="claude"]').getAttribute("aria-pressed") === "true";
@@ -1725,7 +1791,7 @@ ${FENCE}
     clearInterval(shotTimer); paneLocal = false; setWho("");
     if (!paneShare || !proj) return;
     publish({ event: "view", ...fields });
-    if (fields.url && isLocalUrl(fields.url)) { paneLocal = true; lastShot = ""; setTimeout(sendShot, 2500); shotTimer = setInterval(sendShot, 15000); }
+    if (fields.url && isLocalUrl(fields.url)) { paneLocal = true; lastShot = ""; setTimeout(sendShot, 2500); shotTimer = setInterval(sendShot, 4000); }
   }
   async function sendShot() {
     if (!paneLocal || !paneShare || pane.hidden || !native?.pane || document.hidden) return;
@@ -1757,8 +1823,12 @@ ${FENCE}
     if (!isLocalUrl(u)) { showUrl(u, false, true); setWho(who + " сайт"); return; }
     if (!v.shot) { setWho(`${who} своё приложение (${esc(u)}), снимок экрана сейчас придёт`); openPane(true); return; }
     clearInterval(shotTimer); paneLocal = false; paneArt = null;
-    frame.removeAttribute("src"); frame.setAttribute("sandbox", "");
-    frame.srcdoc = `<body style="margin:0;background:#f4f3ef"><img src="${esc(imgSrc(String(v.shot)))}" style="width:100%;display:block" alt=""></body>`;
+    const src = imgSrc(String(v.shot)), shown = frame.dataset.snap === u && frame.contentDocument?.querySelector("img");
+    if (shown) { const im = new Image(); im.onload = () => { shown.src = src; }; im.src = src; }   // swap when loaded: no flicker
+    else {
+      frame.removeAttribute("src"); frame.setAttribute("sandbox", "allow-same-origin"); frame.dataset.snap = u;
+      frame.srcdoc = `<body style="margin:0;background:#f4f3ef"><img src="${esc(src)}" style="width:100%;display:block" alt=""></body>`;
+    }
     paneUrl.value = u; paneEmpty.hidden = true; openPane(true); renderArts();
     setWho(`${who} своё приложение (${esc(u)}): это снимок экрана, он обновляется сам`);
   }
@@ -1767,7 +1837,7 @@ ${FENCE}
     if (!/^[a-z]+:\/\//i.test(u)) u = (/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(u) ? "http://" : "https://") + u;
     if (!/^https?:\/\//i.test(u)) return;
     if (!remote) shareView({ url: u });
-    paneArt = null; frame.removeAttribute("srcdoc");
+    paneArt = null; frame.removeAttribute("srcdoc"); delete frame.dataset.snap;
     frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads");
     frame.src = u; paneUrl.value = u; paneEmpty.hidden = true;
     if (push) paneHist.push({ u });
@@ -1786,7 +1856,7 @@ ${FENCE}
     if (!remote && push) shareView({ art: cid });
     const html = await artifactHtml(e);
     openPane(true);
-    paneArt = cid; paneUrl.value = "артефакт: " + (e.n || "");
+    paneArt = cid; paneUrl.value = "артефакт: " + (e.n || ""); delete frame.dataset.snap;
     frame.removeAttribute("src");
     frame.setAttribute("sandbox", "allow-scripts allow-forms allow-popups allow-modals allow-downloads");
     frame.srcdoc = html || '<p style="font:15px system-ui;padding:24px;color:#777">Артефакт больше недоступен: на сервере канала вложения хранятся около трёх часов.</p>';
@@ -1824,24 +1894,34 @@ ${FENCE}
   function renderRun() {
     $("[data-run-dot]").classList.toggle("on", appRunning);
     $("[data-run]").textContent = appRunning ? "Остановить" : "Запустить";
+    $("[data-app-btn]").classList.toggle("running", appRunning);
     $("[data-run-log]").textContent = appLog.slice(-20000);
   }
-  $("[data-run]").addEventListener("click", () => {
+  let appUrl = "";
+  async function startApp() {
     if (!native?.pane) { flash("Запуск работает в приложении Cowork."); return; }
-    if (appRunning) { native.pane.stop(appId()); return; }
-    const cmd = $("[data-run-cmd]").value.trim();
-    if (!cmd) { $("[data-run-cmd]").focus(); flash("Впишите команду запуска, например npm run dev."); return; }
     if (!proj?.folder) { openSetup(false); return; }
+    let cmd = $("[data-run-cmd]").value.trim();
+    if (!cmd) { const g = await native.pane.guess({ cwd: proj.folder }); cmd = g?.cmd || ""; $("[data-run-cmd]").value = cmd; }
+    if (!cmd) { $("[data-run-cmd]").focus(); flash("Не нашёл, как запускать это приложение. Впишите команду, например npm run dev, или попросите Claude её подсказать."); return; }
     proj.runCmd = cmd; saveProjects();
     appLog = "$ " + cmd + "\n"; native.pane.start({ id: appId(), cwd: proj.folder, cmd });
+  }
+  $("[data-run]").addEventListener("click", () => { if (appRunning) native?.pane?.stop(appId()); else startApp(); });
+  // the header button: one click to run the app and watch it change live (the partner sees it too)
+  $("[data-app-btn]").addEventListener("click", () => {
+    openPane(true);
+    if (!native?.pane) { flash("Здесь виден экран приложения напарника, когда он его запускает."); return; }
+    if (appRunning && appUrl) showUrl(appUrl); else if (!appRunning) startApp();
   });
   $("[data-run-log-toggle]").addEventListener("click", () => { const l = $("[data-run-log]"); l.hidden = !l.hidden; l.scrollTop = l.scrollHeight; });
   native?.pane?.onEvent(m => {
     if (m.id !== appId()) return;
     if (m.running) appRunning = true;
     if (m.log) { appLog += m.log; const l = $("[data-run-log]"); if (!l.hidden) requestAnimationFrame(() => { l.scrollTop = l.scrollHeight; }); }
-    if (m.url && !frame.getAttribute("src")?.startsWith(m.url.replace(/\/$/, ""))) setTimeout(() => showUrl(m.url), 600);
-    if (m.done) { appRunning = false; appLog += m.error ? "\n" + m.error + "\n" : `\n[остановлено${m.code != null ? ", код " + m.code : ""}]\n`; }
+    if (m.url) { appUrl = m.url; if (!frame.getAttribute("src")?.startsWith(m.url.replace(/\/$/, ""))) setTimeout(() => showUrl(m.url), 600); }
+    if (m.reload && appUrl && frame.getAttribute("src")?.startsWith(appUrl.replace(/\/$/, ""))) { frame.src = frame.getAttribute("src"); setTimeout(sendShot, 900); }
+    if (m.done) { appRunning = false; appUrl = ""; appLog += m.error ? "\n" + m.error + "\n" : `\n[остановлено${m.code != null ? ", код " + m.code : ""}]\n`; }
     renderRun();
   });
   try { if (localStorage.getItem("cw.pane")) setTimeout(() => openPane(true), 0); } catch {}
@@ -1950,7 +2030,10 @@ ${FENCE}
     let prompt = `${intro}${item.author}: ${item.text}`;
     if (item.team && mate) { run.team = true; run.mate = mate; prompt = `${intro}${TEAM_LEAD(mate)}\n\n${item.author}: ${item.text}`; }
     if (item.report) { run.team = true; run.mate = mate; prompt = `${intro}Отчёт второго Claude (компьютер ${item.from}):\n${item.text}\n\nПродолжай как ведущий: подтяни его ветку, слей части, проверь работу и коротко опиши людям итог. Если второму Claude нужно поручить ещё что-то, снова используй блок cowork-delegate.`; }
-    if (!run.team && !my21 && mate && people.get(mate)?.t21) { run.mate = mate; run.via21 = true; prompt += HELP21(mate); }
+    // a "/command" goes to Claude Code as is, so it runs the skill or command
+    const slash = !run.team && !item.report && /^\/[\w:.-]+/.test(String(item.text || "").trim());
+    if (slash) prompt = String(item.text).trim();
+    if (!slash && !run.team && !my21 && mate && people.get(mate)?.t21) { run.mate = mate; run.via21 = true; prompt += HELP21(mate); }
     if (!item.text && item.imgs?.length) prompt = prompt.replace(/: $/, item.imgs.some(i => i.f) ? ": (вложение без подписи)" : ": (фото без подписи)");
     prompt += await photoNote(item, proj.folder);
     if (runs.get(chat.id) !== run) return;
@@ -1963,6 +2046,7 @@ ${FENCE}
     const here = proj?.id === run.pid;
     const chatRec = () => here ? myChats.find(c => c.id === run.chat) : null;
     if (m) {
+      if (m.type === "system" && m.subtype === "init" && here && !run.helper) gotCommands(m.slash_commands);
       if (m.type === "system" && m.subtype === "init" && m.session_id) { if (run.helper) { if (here) saveTeamSid(run.chat, m.session_id); } else { const c = chatRec(); if (c) { c.sid = m.session_id; saveChats(); } } }
       else if (!here) return;
       else if (m.type === "stream_event" && !m.parent_tool_use_id) {

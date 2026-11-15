@@ -321,6 +321,46 @@ function githubRepo(dir) {
   } catch { return ""; }
 }
 
+// ---------- команды через «/»: скиллы, свои команды и плагины этого компьютера (только описания, для подсказок) ----------
+function readMeta(f) {
+  try {
+    const t = fs.readFileSync(f, "utf8").slice(0, 4000);
+    const fm = t.startsWith("---") ? t.slice(3, t.indexOf("\n---", 3) > 0 ? t.indexOf("\n---", 3) : 0) : "";
+    const get = k => { const m = fm.match(new RegExp("^" + k + ":\\s*(.+)$", "m")); return m ? m[1].trim().replace(/^["']|["']$/g, "") : ""; };
+    let d = get("description");
+    if (!d) d = (t.replace(/^---[\s\S]*?\n---/, "").split("\n").map(x => x.replace(/^#+\s*/, "").trim()).find(Boolean) || "");
+    return { name: get("name"), d: d.slice(0, 160) };
+  } catch { return { name: "", d: "" }; }
+}
+function walk(dir, depth, fn) {
+  let list; try { list = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  for (const x of list) {
+    const f = path.join(dir, x.name);
+    if (x.isDirectory()) { if (depth > 0 && x.name !== "node_modules" && !x.name.startsWith(".git")) walk(f, depth - 1, fn); }
+    else fn(f, x.name);
+  }
+}
+function scanCommands(root, prefix, src, out) {
+  // commands/*.md (подпапки дают имя через двоеточие) и skills/*/SKILL.md
+  const cdir = path.join(root, "commands");
+  walk(cdir, 3, (f, n) => { if (!/\.md$/i.test(n)) return; const rel = path.relative(cdir, f).replace(/\.md$/i, "").split(path.sep).join(":"); out.push({ n: prefix + rel, d: readMeta(f).d, src }); });
+  walk(path.join(root, "skills"), 3, (f, n) => { if (n !== "SKILL.md") return; const m = readMeta(f); out.push({ n: prefix + (m.name || path.basename(path.dirname(f))), d: m.d, src }); });
+}
+ipcMain.handle("claude:commands", (_e, { cwd }) => {
+  const out = [], home = require("os").homedir(), cl = path.join(home, ".claude");
+  if (cwd) scanCommands(path.join(cwd, ".claude"), "", "проект", out);
+  scanCommands(cl, "", "ваш", out);
+  // плагины: любая папка с .claude-plugin/plugin.json внутри ~/.claude/plugins
+  walk(path.join(cl, "plugins"), 6, (f, n) => {
+    if (n !== "plugin.json" || path.basename(path.dirname(f)) !== ".claude-plugin") return;
+    let name = ""; try { name = JSON.parse(fs.readFileSync(f, "utf8")).name || ""; } catch {}
+    const root = path.dirname(path.dirname(f));
+    scanCommands(root, (name || path.basename(root)) + ":", "плагин", out);
+  });
+  const seen = new Set();
+  return out.filter(x => x.n && !seen.has(x.n) && seen.add(x.n));
+});
+
 // браузер для Claude: Playwright MCP без окна (на Windows через Edge, он есть в системе), скриншоты в <проект>/.cowork/shots
 function browserMcp(cwd) {
   if (process.env.COWORK_NO_BROWSER) return null;
@@ -404,10 +444,57 @@ ipcMain.handle("pane:capture", async (_e, r) => {
 });
 // запуск приложения проекта (например, npm run dev): живёт, пока его не остановят; адрес localhost ловим из вывода
 const apps = new Map();
+// что запускать: скрипт dev/start из package.json, иначе встроенный сервер для папки с index.html
+ipcMain.handle("app:guess", (_e, { cwd }) => {
+  try {
+    const pj = path.join(cwd, "package.json");
+    if (fs.existsSync(pj)) {
+      const sc = JSON.parse(fs.readFileSync(pj, "utf8")).scripts || {};
+      const pm = fs.existsSync(path.join(cwd, "pnpm-lock.yaml")) ? "pnpm" : fs.existsSync(path.join(cwd, "yarn.lock")) ? "yarn" : "npm";
+      const k = ["dev", "start", "serve", "preview"].find(x => sc[x]);
+      if (k) return { cmd: (!fs.existsSync(path.join(cwd, "node_modules")) ? pm + " install && " : "") + (pm === "npm" ? (k === "start" ? "npm start" : "npm run " + k) : pm + " " + k) };
+    }
+    if (["index.html", "public/index.html", "dist/index.html", "src/index.html"].some(f => fs.existsSync(path.join(cwd, f)))) return { cmd: "cowork:static" };
+  } catch {}
+  return {};
+});
+// встроенный сервер: отдаёт файлы проекта и говорит панели обновиться, когда файлы меняются
+function startStatic(id, cwd, send) {
+  const http = require("http");
+  const root = ["", "public", "dist", "src"].map(d => path.join(cwd, d)).find(d => fs.existsSync(path.join(d, "index.html"))) || cwd;
+  const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff", ".mp4": "video/mp4", ".txt": "text/plain; charset=utf-8" };
+  const srv = http.createServer((req, res) => {
+    let f;
+    try { f = path.join(root, decodeURIComponent(new URL(req.url, "http://x").pathname)); } catch { res.writeHead(400); return res.end(); }
+    if (!f.startsWith(root)) { res.writeHead(403); return res.end(); }
+    try { if (fs.statSync(f).isDirectory()) f = path.join(f, "index.html"); } catch {}
+    fs.readFile(f, (err, data) => {
+      if (err) { res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }); return res.end("Не найдено: " + req.url); }
+      res.writeHead(200, { "Content-Type": types[path.extname(f).toLowerCase()] || "application/octet-stream", "Cache-Control": "no-store" });
+      res.end(data);
+    });
+  });
+  let watcher = null, t = 0;
+  const p = { static: true, stop: () => { try { watcher?.close(); } catch {} srv.close(); apps.delete(id); send({ done: true }); } };
+  apps.set(id, p);
+  srv.on("error", err => { apps.delete(id); send({ done: true, error: String(err.message || err) }); });
+  srv.listen(0, "127.0.0.1", () => {
+    const url = "http://localhost:" + srv.address().port + "/";
+    send({ running: true, log: "Встроенный сервер Cowork: " + root + "\n" + url + "\n" });
+    send({ url });
+    try {
+      watcher = fs.watch(root, { recursive: true }, (_ev, name) => {
+        if (name && /(^|[\\/])(\.git|node_modules|\.cowork)([\\/]|$)/.test(name)) return;
+        clearTimeout(t); t = setTimeout(() => send({ reload: true, log: "изменён " + (name || "файл") + "\n" }), 250);
+      });
+    } catch {}
+  });
+}
 ipcMain.on("app:start", (e, { id, cwd, cmd }) => {
   const send = m => { if (!e.sender.isDestroyed()) e.sender.send("app:event", { id, ...m }); };
   if (apps.has(id)) return send({ running: true });
   if (!cwd || !fs.existsSync(cwd) || !String(cmd || "").trim()) return send({ done: true, error: "Нет папки проекта или команды запуска." });
+  if (cmd === "cowork:static") return startStatic(id, cwd, send);
   let p;
   try { p = spawn(String(cmd), [], { cwd, shell: true, windowsHide: true, detached: !isWin, env: claudeEnv({ BROWSER: "none", FORCE_COLOR: "0" }) }); }
   catch (err) { return send({ done: true, error: String(err.message || err) }); }
@@ -425,10 +512,11 @@ ipcMain.on("app:start", (e, { id, cwd, cmd }) => {
 });
 ipcMain.on("app:stop", (_e, id) => {
   const p = apps.get(id); if (!p) return;
+  if (p.static) return p.stop();
   if (isWin) spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true });
   else { try { process.kill(-p.pid); } catch {} try { p.kill("SIGTERM"); } catch {} }
 });
-app.on("before-quit", () => { for (const p of apps.values()) { try { if (isWin) spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true }); else p.kill("SIGTERM"); } catch {} } });
+app.on("before-quit", () => { for (const p of apps.values()) { try { if (p.static) p.stop(); else if (isWin) spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true }); else p.kill("SIGTERM"); } catch {} } });
 
 // ---------- вкладка «Cowork»: код приложения на этом компьютере ----------
 ipcMain.handle("self:clone", () => new Promise(resolve => {
