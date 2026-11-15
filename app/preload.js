@@ -23,6 +23,14 @@ contextBridge.exposeInMainWorld("coworkNative", {
     stop: id => ipcRenderer.send("claude:stop", id),
     onEvent: fn => ipcRenderer.on("claude:event", (_e, m) => fn(m))
   },
+  pane: {
+    read: opts => ipcRenderer.invoke("pane:read", opts),
+    list: opts => ipcRenderer.invoke("pane:list", opts),
+    capture: rect => ipcRenderer.invoke("pane:capture", rect),
+    start: opts => ipcRenderer.send("app:start", opts),
+    stop: id => ipcRenderer.send("app:stop", id),
+    onEvent: fn => ipcRenderer.on("app:event", (_e, m) => fn(m))
+  },
   self: {
     clone: () => ipcRenderer.invoke("self:clone"),
     preview: dir => ipcRenderer.invoke("self:preview", String(dir || "")),

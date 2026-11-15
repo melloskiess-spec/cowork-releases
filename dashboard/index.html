@@ -305,6 +305,50 @@ button, input, textarea { font: inherit; color: inherit; }
 /* ---------- v0.5: chat layout in the spirit of a classic AI chat (centered column, greeting, composer card) ---------- */
 .app { transition: grid-template-columns .35s var(--ease); }
 body.collapsed .app { grid-template-columns: 0 minmax(0, 1fr); }
+body.pane-open .app { grid-template-columns: 284px minmax(0, 1fr) minmax(380px, 46%); }
+body.pane-open.collapsed .app { grid-template-columns: 0 minmax(0, 1fr) minmax(380px, 50%); }
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; margin: 10px 10px 10px 0; border-radius: var(--r1); background: var(--c2); color: var(--c1); overflow: hidden; }
+.pane[hidden] { display: none !important; }
+.top .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.pane-open .top-btn span { display: none; }
+body.pane-open .top-btn { padding: 8px 10px; }
+body.pane-open .pchip { padding-right: 3px; }
+body.pane-open .pchip > :not(:first-child) { display: none; }
+body.pane-open [data-pane-toggle] { background: var(--c3s); color: var(--c3d); border-color: color-mix(in srgb, var(--c3) 45%, transparent); }
+.pane-bar { display: flex; align-items: center; gap: 6px; padding: 10px 10px 8px; border-bottom: 1px solid var(--line-l); }
+.pane-btn { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--c6); cursor: pointer; }
+.pane-btn:hover { background: var(--c3s); color: var(--c3d); }
+.pane-btn svg, .top-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pane-url { flex: 1; min-width: 0; }
+.pane-url input, .pane-run input { width: 100%; height: 32px; padding: 0 12px; border: 1px solid var(--line-l); border-radius: 10px; background: var(--c4); color: inherit; font: 13px var(--f2); outline: none; }
+.pane-url input:focus, .pane-run input:focus { border-color: var(--c3); background: transparent; }
+.pane-run { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line-l); }
+.pane-run input { flex: 1; font-family: var(--mono, monospace); font-size: 12.5px; }
+.run-dot { flex: none; width: 8px; height: 8px; border-radius: var(--r2); background: var(--c5); }
+.run-dot.on { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.pane-pill { flex: none; height: 30px; padding: 0 13px; border: 0; border-radius: var(--r2); background: var(--c3); color: #fff; font: 600 12.5px var(--f2); cursor: pointer; }
+.pane-pill:hover { background: var(--c3d); }
+.pane-pill.ghost { background: none; color: var(--c6); box-shadow: inset 0 0 0 1px var(--line-l); }
+.pane-pill.ghost:hover { color: var(--c3d); background: var(--c3s); }
+.run-log { margin: 0; max-height: 160px; overflow: auto; padding: 8px 12px; background: #0d0c11; color: #d8d6e0; font: 11.5px/1.45 var(--mono, monospace); white-space: pre-wrap; }
+.pane-arts { display: flex; gap: 6px; padding: 8px 10px 0; overflow-x: auto; }
+.pane-arts:empty { display: none; }
+.pane-arts button { flex: none; max-width: 200px; padding: 5px 11px; border: 1px solid var(--line-l); border-radius: var(--r2); background: none; color: var(--c6); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.pane-arts button[aria-pressed="true"] { border-color: var(--c3); color: var(--c3d); background: var(--c3s); }
+.pane-body { position: relative; flex: 1; min-height: 0; margin: 8px 10px 10px; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: inset 0 0 0 1px var(--line-l); }
+.pane-body iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+.pane-empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; padding: 30px; text-align: center; background: var(--c2); color: var(--c6); font-size: 14px; }
+.pane-empty b { font: 800 26px/1 var(--f1); color: var(--c1); letter-spacing: -0.03em; }
+.pane-empty p { margin: 0 auto; max-width: 30rem; }
+.art-card { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 420px; padding: 12px 14px; border: 1px solid var(--line-l); border-radius: 16px; background: var(--c2); color: inherit; text-align: left; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+.art-card:hover { border-color: var(--c3); box-shadow: 0 10px 24px -18px var(--c3); }
+.art-card svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--c3); stroke-width: 1.8; stroke-linejoin: round; }
+.art-card b { display: block; font-size: 14px; } .art-card span { font-size: 12px; color: var(--c6); }
+.shots { display: flex; flex-wrap: wrap; gap: 6px; }
+.shots img { max-width: 260px; max-height: 180px; border-radius: 12px; cursor: zoom-in; box-shadow: inset 0 0 0 1px var(--line-l); }
+[data-theme="dark"] .pane { background: #131218; color: #ecebf2; --c1: #ecebf2; --c6: #a3a0ad; --c4: #23212b; --line-l: #2a2833; }
+[data-theme="warm"] .pane { background: #fbfaf7; box-shadow: 0 0 0 1px #e7e2d6; }
+[data-theme="light"] .pane { background: #fff; box-shadow: 0 0 0 1px #e7e6ee; }
 body.collapsed .side { visibility: hidden; }
 body.collapsed .main { margin-left: 10px; }
 .side { min-width: 0; overflow: hidden; }
@@ -522,6 +566,7 @@ body[data-theme] .msg.note .ubub { background: none; }
         <button class="top-btn" type="button" data-preview title="Открыть приложение из вашей копии кода, с последними правками">Предпросмотр</button>
         <button class="top-btn primary" type="button" data-release title="Claude поднимет версию, закоммитит и запушит, GitHub выпустит обновление">Выпустить обновление</button>
       </div>
+      <button class="top-btn" type="button" data-pane-toggle title="Панель просмотра: артефакты, приложение, сайты"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M14 4v16"/></svg><span>Просмотр</span></button>
       <div class="presence" data-presence></div>
       <div class="live" data-live><span class="ldot"></span><span data-live-text>офлайн</span></div>
     </header>
@@ -572,6 +617,26 @@ body[data-theme] .msg.note .ubub { background: none; }
       </form>
     </div>
   </main>
+  <aside class="pane" data-pane hidden aria-label="Просмотр">
+    <div class="pane-bar">
+      <button class="pane-btn" type="button" data-pane-back title="Назад" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="pane-btn" type="button" data-pane-reload title="Обновить" aria-label="Обновить"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+      <form class="pane-url" data-pane-go><input data-pane-url spellcheck="false" placeholder="localhost:3000, сайт или артефакт" aria-label="Адрес"></form>
+      <button class="pane-btn" type="button" data-pane-shot title="Скриншот в сообщение" aria-label="Скриншот в сообщение"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="pane-btn" type="button" data-pane-ext title="Открыть в браузере" aria-label="Открыть в браузере"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M19 14v5H5V5h5"/></svg></button>
+      <button class="pane-btn" type="button" data-pane-close title="Закрыть панель" aria-label="Закрыть панель"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="pane-run" data-pane-run>
+      <span class="run-dot" data-run-dot></span>
+      <input data-run-cmd spellcheck="false" placeholder="Команда запуска, например npm run dev" aria-label="Команда запуска">
+      <button class="pane-pill" type="button" data-run>Запустить</button>
+      <button class="pane-pill ghost" type="button" data-run-log-toggle>Лог</button>
+    </div>
+    <pre class="run-log" data-run-log hidden></pre>
+    <div class="pane-arts" data-pane-arts></div>
+    <div class="pane-body"><iframe data-pane-frame title="Просмотр" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"></iframe>
+      <div class="pane-empty" data-pane-empty><b>Просмотр</b><p>Здесь открываются артефакты, которые делает Claude, и ваше приложение. Впишите адрес или команду запуска выше.</p></div></div>
+  </aside>
 </div>
 
 <dialog class="setup" data-setup aria-labelledby="setup-title">
@@ -665,6 +730,11 @@ body[data-theme] .msg.note .ubub { background: none; }
   let theme = "warm";
   try { theme = localStorage.getItem("cw.theme") || "warm"; } catch {}
   document.body.dataset.theme = theme;
+  document.addEventListener("click", ev => {
+    if (!ev.target.closest("[data-browser-toggle]") || !proj) return;
+    proj.browser = proj.browser === false; saveProjects(); openPMenu(false);
+    flash(proj.browser ? "Браузер для Claude включён." : "Браузер для Claude выключен.");
+  });
   document.addEventListener("click", ev => {
     const b = ev.target.closest("[data-theme-pick]"); if (!b) return;
     theme = b.dataset.themePick; document.body.dataset.theme = theme;
@@ -907,6 +977,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       + `<button class="pm-item" type="button" role="menuitem" data-proj-add><i class="ic">+</i><span class="pn"><b>Добавить проект</b><span>папка с кодом и канал с напарником</span></span></button>`
       + (native?.self ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-self-tab><i class="ic">✦</i><span class="pn"><b>Код Cowork</b><span>менять само приложение вместе с Claude</span></span>${selfP && selfP.id === proj?.id ? check : ""}</button>` : "")
       + (proj ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-open-setup-menu><i class="ic">⚙</i><span class="pn"><b>Настройки проекта</b><span>${esc(proj.kind === "self" ? "Код Cowork" : proj.name)}: папка, канал, права Claude</span></span></button>` : "")
+      + (proj ? `<div class="pm-sep"></div><button class="pm-item" type="button" role="menuitem" data-browser-toggle><i class="ic">◎</i><span class="pn"><b>Браузер для Claude: ${proj.browser === false ? "выключен" : "включён"}</b><span>Claude сам открывает сайты и ваше приложение, присылает скриншоты</span></span></button>` : "")
       + `<div class="pm-sep"></div><div class="pm-label">Оформление</div><div class="themes">${THEMES.map(([id, label, sw]) => `<button type="button" data-theme-pick="${id}" aria-pressed="${theme === id}"><i style="background:${sw}"></i>${label}</button>`).join("")}</div>`;
   }
   pswitch.addEventListener("click", ev => { ev.stopPropagation(); openPMenu(); });
@@ -987,6 +1058,7 @@ body[data-theme] .msg.note .ubub { background: none; }
   // a chat reads like one conversation: people's messages on the right, Claude's answers with folded steps on the left
   const imgSrc = u => u + (proj?.token ? (u.includes("?") ? "&" : "?") + authQ().slice(1) : "");
   const fsize = n => !n ? "" : n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + " КБ" : (n / 1048576).toFixed(1).replace(".", ",") + " МБ";
+  const ART_ICON = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="m9 13-2 2 2 2M15 13l2 2-2 2"/></svg>';
   const FILE_ICON = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
   function imgsHtml(e) {
     const srcs = e.imgLocal || (Array.isArray(e.img) ? e.img.map(i => i && i.u ? imgSrc(String(i.u)) : "").filter(u => /^https?:\/\//.test(u)) : []);
@@ -1025,6 +1097,8 @@ body[data-theme] .msg.note .ubub { background: none; }
         steps = [];
       };
       for (const s of group.items) {
+        if (s.event === "artifact") { flushSteps(false); body += `<button type="button" class="art-card" data-open-art="${esc(s.cid)}">${ART_ICON}<div><b>${esc(s.n || "артефакт")}</b><span>артефакт · открыть в панели</span></div></button>`; continue; }
+        if (s.event === "shot") { flushSteps(false); const srcs = s.imgLocal?.length ? s.imgLocal : (s.img || []).filter(i => i && /^https?:/.test(String(i.u))).map(i => imgSrc(String(i.u))); body += `<div class="shots">${srcs.map(u => `<img src="${esc(u)}" alt="скриншот" data-zoom loading="lazy">`).join("")}</div>`; continue; }
         if (s.event === "reply") { flushSteps(false); body += replyHtml(s.full || s.text, s.err ? "err" : ""); continue; }
         if (s.event === "idle") { if (/Остановлено|не смог/.test(s.text)) status = s.text; continue; }
         steps.push(s);
@@ -1144,6 +1218,7 @@ body[data-theme] .msg.note .ubub { background: none; }
 
     renderStatus();
     renderComposer();
+    if (!pane.hidden) renderArts();
     processAsks();
   }
 
@@ -1605,13 +1680,104 @@ ${FENCE}
     }
   }
   function runHelper(e) {
-    const run = { id: newId(), chat: e.chat, pid: proj.id, live: "", sentLive: "", folder: proj.folder, helper: true, lead: e.user, texts: [] };
+    const run = { id: newId(), chat: e.chat, pid: proj.id, live: "", sentLive: "", folder: proj.folder, helper: true, lead: e.user, texts: [], t0: Date.now() };
     runs.set(e.chat, run);
     publish({ event: "take", chat: e.chat, ask: e.cid, run: run.id });
     const sid = teamSids()[e.chat] || "";
-    native.claude.run({ id: run.id, prompt: `${sid ? "" : TEAM_HELPER(e.user)}Задание от ведущего Claude (компьютер ${e.user}):\n${e.full || e.text}`, cwd: proj.folder, resume: sid, perm: proj.perm, self: proj.kind === "self", team: true });
+    native.claude.run({ id: run.id, prompt: `${sid ? "" : TEAM_HELPER(e.user)}Задание от ведущего Claude (компьютер ${e.user}):\n${e.full || e.text}`, cwd: proj.folder, resume: sid, perm: proj.perm, self: proj.kind === "self", team: true, browser: proj.browser !== false });
     render();
   }
+
+  // ---------- pane: artifacts, the running app, any site ----------
+  const pane = $("[data-pane]"), frame = $("[data-pane-frame]"), paneUrl = $("[data-pane-url]"), paneEmpty = $("[data-pane-empty]");
+  const artText = new Map();   // artifact cid -> html
+  let paneArt = null, paneHist = [];
+  function openPane(on = true) {
+    pane.hidden = !on; document.body.classList.toggle("pane-open", on);
+    try { localStorage.setItem("cw.pane", on ? "1" : ""); } catch {}
+    if (on) { $("[data-run-cmd]").value = proj?.runCmd || ""; renderArts(); }
+  }
+  function showUrl(u, push = true) {
+    u = String(u || "").trim(); if (!u) return;
+    if (!/^[a-z]+:\/\//i.test(u)) u = (/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(u) ? "http://" : "https://") + u;
+    if (!/^https?:\/\//i.test(u)) return;
+    paneArt = null; frame.removeAttribute("srcdoc");
+    frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads");
+    frame.src = u; paneUrl.value = u; paneEmpty.hidden = true;
+    if (push) paneHist.push({ u });
+    openPane(true); renderArts();
+  }
+  async function artifactHtml(e) {
+    if (artText.has(e.cid)) return artText.get(e.cid);
+    let html = "";
+    if (e.user === me && native?.pane && e.file && proj?.folder) { const r = await native.pane.read({ folder: proj.folder, file: e.file }); html = r.text || ""; }
+    if (!html && e.u && /^https?:\/\//.test(e.u)) { try { const r = await fetch(imgSrc(e.u)); if (r.ok) html = await r.text(); } catch {} }
+    if (html) artText.set(e.cid, html);
+    return html;
+  }
+  async function showArt(cid, push = true) {
+    const e = events.find(x => x.cid === cid && x.event === "artifact"); if (!e) return;
+    const html = await artifactHtml(e);
+    openPane(true);
+    paneArt = cid; paneUrl.value = "артефакт: " + (e.n || "");
+    frame.removeAttribute("src");
+    frame.setAttribute("sandbox", "allow-scripts allow-forms allow-popups allow-modals allow-downloads");
+    frame.srcdoc = html || '<p style="font:15px system-ui;padding:24px;color:#777">Артефакт больше недоступен: на сервере канала вложения хранятся около трёх часов.</p>';
+    paneEmpty.hidden = true;
+    if (push) paneHist.push({ art: cid });
+    renderArts();
+  }
+  // artifacts of the open chat (latest version of each file), as tabs above the view
+  function renderArts() {
+    const c = currentChat(); const box = $("[data-pane-arts]");
+    const list = events.filter(e => e.event === "artifact" && (!c || chatOf(e) === c.id));
+    const latest = new Map(); for (const e of list) latest.set(e.user + "|" + (e.file || e.n), e);
+    box.innerHTML = [...latest.values()].slice(-8).map(e => `<button type="button" data-open-art="${esc(e.cid)}" aria-pressed="${paneArt === e.cid}" title="${esc(e.n)}">${esc(e.n)}</button>`).join("");
+  }
+  $("[data-pane-toggle]").addEventListener("click", () => openPane(pane.hidden));
+  $("[data-pane-close]").addEventListener("click", () => openPane(false));
+  $("[data-pane-go]").addEventListener("submit", ev => { ev.preventDefault(); showUrl(paneUrl.value); });
+  $("[data-pane-reload]").addEventListener("click", () => { if (paneArt) { artText.delete(paneArt); showArt(paneArt, false); } else if (frame.src) frame.src = frame.src; });
+  $("[data-pane-back]").addEventListener("click", () => { paneHist.pop(); const h = paneHist.at(-1); if (!h) return; if (h.art) showArt(h.art, false); else showUrl(h.u, false); });
+  $("[data-pane-ext]").addEventListener("click", () => { const u = frame.getAttribute("src"); if (u && /^https?:/.test(u)) window.open(u, "_blank"); });
+  document.addEventListener("click", ev => { const b = ev.target.closest("[data-open-art]"); if (b) { ev.preventDefault(); showArt(b.dataset.openArt); } });
+  // screenshot of the view goes into the message as a photo
+  $("[data-pane-shot]").addEventListener("click", async () => {
+    if (!native?.pane) { flash("Скриншот работает в приложении Cowork."); return; }
+    const r0 = $(".pane-body").getBoundingClientRect();
+    const r = await native.pane.capture({ x: r0.left, y: r0.top, width: r0.width, height: r0.height });
+    if (!r?.data) { flash("Не получилось сделать скриншот."); return; }
+    const bin = atob(r.data), arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    await addImage(new File([arr], "screenshot.png", { type: "image/png" }));
+    msg.focus(); flash("Скриншот добавлен в сообщение.");
+  });
+  // the project's app: start/stop, log, open its localhost address when it shows up
+  const appId = () => "app-" + (proj?.id || "");
+  let appRunning = false, appLog = "";
+  function renderRun() {
+    $("[data-run-dot]").classList.toggle("on", appRunning);
+    $("[data-run]").textContent = appRunning ? "Остановить" : "Запустить";
+    $("[data-run-log]").textContent = appLog.slice(-20000);
+  }
+  $("[data-run]").addEventListener("click", () => {
+    if (!native?.pane) { flash("Запуск работает в приложении Cowork."); return; }
+    if (appRunning) { native.pane.stop(appId()); return; }
+    const cmd = $("[data-run-cmd]").value.trim();
+    if (!cmd) { $("[data-run-cmd]").focus(); flash("Впишите команду запуска, например npm run dev."); return; }
+    if (!proj?.folder) { openSetup(false); return; }
+    proj.runCmd = cmd; saveProjects();
+    appLog = "$ " + cmd + "\n"; native.pane.start({ id: appId(), cwd: proj.folder, cmd });
+  });
+  $("[data-run-log-toggle]").addEventListener("click", () => { const l = $("[data-run-log]"); l.hidden = !l.hidden; l.scrollTop = l.scrollHeight; });
+  native?.pane?.onEvent(m => {
+    if (m.id !== appId()) return;
+    if (m.running) appRunning = true;
+    if (m.log) { appLog += m.log; const l = $("[data-run-log]"); if (!l.hidden) requestAnimationFrame(() => { l.scrollTop = l.scrollHeight; }); }
+    if (m.url && !frame.getAttribute("src")?.startsWith(m.url.replace(/\/$/, ""))) setTimeout(() => showUrl(m.url), 600);
+    if (m.done) { appRunning = false; appLog += m.error ? "\n" + m.error + "\n" : `\n[остановлено${m.code != null ? ", код " + m.code : ""}]\n`; }
+    renderRun();
+  });
+  try { if (localStorage.getItem("cw.pane")) setTimeout(() => openPane(true), 0); } catch {}
 
   // ---------- the "Cowork" tab: change the app itself ----------
   const selfDlg = $("[data-self-dialog]");
@@ -1648,7 +1814,7 @@ ${FENCE}
   const safe = p => p && p.catch(err => { console.warn("[cowork] publish", err); flash("Канал недоступен: напарник может не видеть эти шаги."); });
   function onTool(run, name, input = {}) {
     const base0 = { chat: run.chat, run: run.id };
-    if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(name)) { const f = rel(input.file_path || input.notebook_path); return safe(publish({ event: "edit", ...base0, file: f, text: "изменил " + f })); }
+    if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(name)) { noteArtifact(run, input.file_path); const f = rel(input.file_path || input.notebook_path); return safe(publish({ event: "edit", ...base0, file: f, text: "изменил " + f })); }
     if (name === "Bash") {
       const cmd = String(input.command || "");
       if (/git\s+commit/.test(cmd)) {
@@ -1678,8 +1844,39 @@ ${FENCE}
     if (failed.length) note += `\n\n(Не удалось получить вложения: ${failed.join(", ")}.)`;
     return note;
   }
+  function noteArtifact(run, file) {
+    const m = String(file || "").replace(/\\/g, "/").match(/(?:^|\/)\.cowork\/artifacts\/([^/]+\.html?)$/i);
+    if (m) (run.arts ||= new Set()).add(m[1]);
+  }
+  // after a run: publish the artifacts it wrote (uploaded so the partner sees them) and its browser screenshots
+  async function shareRunOutputs(run) {
+    if (!native?.pane || !run.folder) return;
+    for (const n of run.arts || []) {
+      const r = await native.pane.read({ folder: run.folder, file: n }); if (!r?.text) continue;
+      let u;
+      try {
+        const headers = { Filename: n.replace(/[^\w.-]/g, "_"), Message: "cowork-file" }; if (proj.token) headers.Authorization = "Bearer " + proj.token;
+        const res = await fetch(base(), { method: "PUT", headers, body: new Blob([r.text], { type: "text/html" }) });
+        const j = res.ok ? await res.json() : null; u = j?.attachment?.url;
+      } catch {}
+      const e = await publish({ event: "artifact", chat: run.chat, run: run.id, n, file: n, u });
+      if (e) artText.set(e.cid, r.text);
+      if (run.chat === chatId) showArt(e.cid);
+    }
+    const shots = await native.pane.list({ folder: run.folder, sub: "shots", since: run.t0 || 0 });
+    if (shots.length) {
+      const imgs = [];
+      for (const s of shots.slice(-4)) {
+        const bin = atob(s.data), arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const blob = new Blob([arr], { type: "image/png" });
+        imgs.push({ name: s.n.replace(/[^\w.-]/g, "_"), blob, url: URL.createObjectURL(blob) });
+      }
+      const up = await uploadAtts(imgs);
+      publish({ event: "shot", chat: run.chat, run: run.id, img: up.filter(i => i.u).map(i => ({ u: i.u, n: i.n })) }, { imgLocal: up.map(i => i.local) });
+    }
+  }
   async function runClaude(chat, item) {
-    const run = { id: item.run, chat: chat.id, pid: proj.id, live: "", sentLive: "", folder: proj.folder };
+    const run = { id: item.run, chat: chat.id, pid: proj.id, live: "", sentLive: "", folder: proj.folder, t0: Date.now() };
     runs.set(chat.id, run);
     const intro = chat.sid ? "" : "Это общий чат в приложении Cowork: с тобой одновременно работают несколько человек, каждое сообщение подписано именем автора. Отвечай всем в одном разговоре.\n\n";
     const mate = item.from || (item.author !== me ? item.author : partnerName(null));
@@ -1689,7 +1886,7 @@ ${FENCE}
     if (!item.text && item.imgs?.length) prompt = prompt.replace(/: $/, item.imgs.some(i => i.f) ? ": (вложение без подписи)" : ": (фото без подписи)");
     prompt += await photoNote(item, proj.folder);
     if (runs.get(chat.id) !== run) return;
-    native.claude.run({ id: run.id, prompt, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, team: !!run.team, self: proj.kind === "self" });
+    native.claude.run({ id: run.id, prompt, cwd: proj.folder, resume: chat.sid || "", perm: proj.perm, team: !!run.team, self: proj.kind === "self", browser: proj.browser !== false });
     render();
   }
   let liveFrame = 0;
@@ -1724,6 +1921,7 @@ ${FENCE}
     }
     if (done) {
       runs.delete(run.chat);
+      if (here) shareRunOutputs(run).catch(err => console.warn("[cowork] outputs", err));
       const err = run.err || error;
       if (here) {
         if (err && !stopped) {

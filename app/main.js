@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, dialog, nativeImage, clipboard } = require("electron");
+const { app, BrowserWindow, Tray, Menu, Notification, ipcMain, shell, dialog, nativeImage, clipboard, session } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -316,7 +316,21 @@ function githubRepo(dir) {
   } catch { return ""; }
 }
 
-ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self, team }) => {
+// браузер для Claude: Playwright MCP без окна (на Windows через Edge, он есть в системе), скриншоты в <проект>/.cowork/shots
+function browserMcp(cwd) {
+  if (process.env.COWORK_NO_BROWSER) return null;
+  try {
+    const shots = path.join(cwd, ".cowork", "shots");
+    fs.mkdirSync(shots, { recursive: true });
+    const a = ["-y", "@playwright/mcp@0.0.85", "--headless", "--isolated", "--output-dir", shots];
+    if (isWin) a.push("--browser", "msedge");
+    const cfg = { mcpServers: { browser: isWin ? { command: "cmd.exe", args: ["/c", "npx", ...a] } : { command: "npx", args: a } } };
+    const f = path.join(app.getPath("userData"), "browser-mcp.json");
+    fs.writeFileSync(f, JSON.stringify(cfg));
+    return f;
+  } catch { return null; }
+}
+ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self, team, browser }) => {
   const send = msg => { if (!e.sender.isDestroyed()) e.sender.send("claude:event", { id, ...msg }); };
   if (!cwd || !fs.existsSync(cwd)) return send({ done: true, error: "Папка проекта не найдена. Выберите её в настройках." });
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
@@ -329,10 +343,12 @@ ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self, team }) => {
   // 21st.dev: каталог компонентов по подписке пользователя, если он вошёл через «Подключить 21st.dev»
   const has21 = has21st();
   if (has21) allow.push("Bash(npx @21st-dev/cli:*)", "Bash(npx -y @21st-dev/cli:*)", "Bash(21st:*)");
+  const mcp = browser !== false ? browserMcp(cwd) : null;
+  if (mcp) { args.push("--mcp-config", mcp); allow.push("mcp__browser"); }
   if (allow.length) args.push("--allowedTools", ...allow);
   if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
   // ответы в чате Cowork читают люди, иногда не программисты: коротко и понятно
-  args.push("--append-system-prompt", "Ты отвечаешь в чате приложения Cowork, его читают оба участника проекта. Пиши коротко и понятно, простым языком: обычно не больше трёх-пяти предложений. Сначала результат, потом только то, что человеку нужно знать или сделать. Без длинных списков, лишних технических подробностей и пересказа своих шагов, если об этом не просят. Отвечай на языке собеседника." + (has21 ? " У пользователя есть доступ к каталогу 21st.dev: когда нужен интерфейсный компонент, шаблон, тема или логотип, сначала поищи его командой npx -y @21st-dev/cli search и запросом на английском, код бери через npx -y @21st-dev/cli get с номером из поиска или add автор/название, и только если ничего не подходит, пиши сам. Команда npx -y @21st-dev/cli usage показывает лимиты подписки." : ""));
+  args.push("--append-system-prompt", "Ты отвечаешь в чате приложения Cowork, его читают оба участника проекта. Пиши коротко и понятно, простым языком: обычно не больше трёх-пяти предложений. Сначала результат, потом только то, что человеку нужно знать или сделать. Без длинных списков, лишних технических подробностей и пересказа своих шагов, если об этом не просят. Отвечай на языке собеседника. Если людям полезно что-то увидеть (макет, прототип, схему, отчёт, таблицу, презентацию), сделай артефакт: один самодостаточный HTML-файл со встроенными стилями и скриптами в папке .cowork/artifacts проекта, имя латиницей. Cowork сам покажет его обоим участникам в панели просмотра, в ответе достаточно коротко сказать, что это." + (mcp ? " У тебя есть браузер без окна (инструменты mcp__browser): открывай в нём сайты и запущенное приложение проекта, чтобы проверить, как всё выглядит и работает. Если людям полезно увидеть результат, сделай снимок через browser_take_screenshot без имени файла, Cowork покажет его в чате." : "") + (has21 ? " У пользователя есть доступ к каталогу 21st.dev: когда нужен интерфейсный компонент, шаблон, тема или логотип, сначала поищи его командой npx -y @21st-dev/cli search и запросом на английском, код бери через npx -y @21st-dev/cli get с номером из поиска или add автор/название, и только если ничего не подходит, пиши сам. Команда npx -y @21st-dev/cli usage показывает лимиты подписки." : ""));
   // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
   const env = claudeEnv({ COWORK_ENABLED: "0" });
   let p;
@@ -356,6 +372,58 @@ ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self, team }) => {
   p.on("close", code => { runs.delete(id); send({ done: true, code, stopped: p._stopped === true, error: code && !p._stopped ? errTail.trim() || `claude завершился с кодом ${code}` : "" }); });
   p.stdin.end(String(prompt || ""));
 });
+
+// ---------- панель просмотра: артефакты, запуск приложения, скриншот ----------
+// артефакт — HTML-файл, который Claude кладёт в <проект>/.cowork/artifacts
+ipcMain.handle("pane:read", (_e, { folder, file }) => {
+  try {
+    const root = path.resolve(String(folder || ""), ".cowork", "artifacts");
+    const f = path.resolve(root, String(file || ""));
+    if (!f.startsWith(root + path.sep) || !/\.html?$/i.test(f)) throw new Error("не артефакт");
+    const st = fs.statSync(f); if (st.size > 3e6) throw new Error("слишком большой");
+    return { text: fs.readFileSync(f, "utf8"), mtime: st.mtimeMs };
+  } catch (e) { return { error: String(e.message || e) }; }
+});
+ipcMain.handle("pane:list", (_e, { folder, sub, since }) => {
+  try {
+    const dir = path.join(String(folder || ""), ".cowork", sub === "shots" ? "shots" : "artifacts");
+    return fs.readdirSync(dir).map(n => ({ n, f: path.join(dir, n), t: fs.statSync(path.join(dir, n)).mtimeMs }))
+      .filter(x => x.t >= (since || 0) && /\.(html?|png|jpe?g|webp)$/i.test(x.n)).map(x => ({ n: x.n, t: x.t, data: /\.html?$/i.test(x.n) ? null : fs.readFileSync(x.f).toString("base64") }));
+  } catch { return []; }
+});
+ipcMain.handle("pane:capture", async (_e, r) => {
+  try {
+    const img = await win.webContents.capturePage({ x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) });
+    return { data: img.toPNG().toString("base64") };
+  } catch (e) { return { error: String(e.message || e) }; }
+});
+// запуск приложения проекта (например, npm run dev): живёт, пока его не остановят; адрес localhost ловим из вывода
+const apps = new Map();
+ipcMain.on("app:start", (e, { id, cwd, cmd }) => {
+  const send = m => { if (!e.sender.isDestroyed()) e.sender.send("app:event", { id, ...m }); };
+  if (apps.has(id)) return send({ running: true });
+  if (!cwd || !fs.existsSync(cwd) || !String(cmd || "").trim()) return send({ done: true, error: "Нет папки проекта или команды запуска." });
+  let p;
+  try { p = spawn(String(cmd), [], { cwd, shell: true, windowsHide: true, detached: !isWin, env: claudeEnv({ BROWSER: "none", FORCE_COLOR: "0" }) }); }
+  catch (err) { return send({ done: true, error: String(err.message || err) }); }
+  apps.set(id, p);
+  send({ running: true });
+  const onOut = d => {
+    const t = String(d).replace(/\x1b\[[0-9;]*[A-Za-z]/g, "");
+    send({ log: t });
+    const m = t.match(/https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1?\])(?::\d+)?[^\s'"<>)\]]*/);
+    if (m) send({ url: m[0].replace("0.0.0.0", "localhost") });
+  };
+  p.stdout.on("data", onOut); p.stderr.on("data", onOut);
+  p.on("error", err => { apps.delete(id); send({ done: true, error: String(err.message || err) }); });
+  p.on("close", code => { apps.delete(id); send({ done: true, code }); });
+});
+ipcMain.on("app:stop", (_e, id) => {
+  const p = apps.get(id); if (!p) return;
+  if (isWin) spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true });
+  else { try { process.kill(-p.pid); } catch {} try { p.kill("SIGTERM"); } catch {} }
+});
+app.on("before-quit", () => { for (const p of apps.values()) { try { if (isWin) spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true }); else p.kill("SIGTERM"); } catch {} } });
 
 // ---------- вкладка «Cowork»: код приложения на этом компьютере ----------
 ipcMain.handle("self:clone", () => new Promise(resolve => {
@@ -386,6 +454,16 @@ ipcMain.on("claude:stop", (_e, id) => {
 app.on("before-quit", () => { for (const id of runs.keys()) ipcMain.emit("claude:stop", null, id); });
 
 app.whenReady().then(() => {
+  // панель просмотра — маленький браузер: сайтам, которые запрещают встраивание, это разрешаем только внутри неё
+  session.defaultSession.webRequest.onHeadersReceived((d, cb) => {
+    if (d.resourceType !== "subFrame") return cb({});
+    const h = { ...d.responseHeaders };
+    for (const k of Object.keys(h)) {
+      if (/^x-frame-options$/i.test(k)) delete h[k];
+      else if (/^content-security-policy$/i.test(k)) h[k] = h[k].map(v => v.replace(/frame-ancestors[^;]*;?/gi, ""));
+    }
+    cb({ responseHeaders: h });
+  });
   createWindow();
   buildTray();
   setTimeout(() => checkUpdates(false), 5000);
