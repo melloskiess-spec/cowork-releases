@@ -23,7 +23,14 @@ html, body { height: 100%; margin: 0; overflow: hidden; }
 body { background: var(--c1); color: var(--c2); font: 15px/1.5 var(--f2); -webkit-font-smoothing: antialiased; user-select: none; }
 button, input, textarea { font: inherit; color: inherit; }
 ::selection { background: var(--c3); color: #fff; }
-:focus-visible { outline: 3px solid var(--c3); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--c3); outline-offset: 2px; }
+.side :focus-visible, .pane :focus-visible, .slash :focus-visible { outline-offset: -2px; }
+textarea, input { caret-color: var(--c3); }
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--c6) 40%, transparent) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 10px; background: color-mix(in srgb, var(--c6) 40%, transparent) padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--c6) 65%, transparent); }
+::-webkit-scrollbar-track { background: transparent; }
 .sel { user-select: text; }
 [hidden] { display: none !important; }
 .dot { display: inline-block; width: .19em; height: .19em; margin-left: .04em; border-radius: var(--r2); background: var(--c3); }
@@ -310,7 +317,7 @@ body.pane-open.collapsed .app { grid-template-columns: 0 minmax(0, 1fr) minmax(3
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; margin: 10px 10px 10px 0; border-radius: var(--r1); background: var(--c2); color: var(--c1); overflow: hidden; }
 .pane[hidden] { display: none !important; }
 [data-say].box { position: relative; }
-.slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 30; max-height: 320px; overflow: auto; padding: 6px; border-radius: 18px; background: var(--c2); color: var(--c1); box-shadow: 0 0 0 1px var(--line-l), 0 18px 40px -18px rgba(20,16,40,.35); }
+.slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 30; max-height: 320px; overflow: auto; padding: 6px; border-radius: 18px; background: var(--panel, #fff); color: var(--c1); box-shadow: 0 0 0 1px var(--line-l), 0 18px 40px -18px rgba(20,16,40,.35); }
 .slash[hidden] { display: none; }
 .slash button { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 8px 12px; border: 0; border-radius: 12px; background: none; color: inherit; text-align: left; cursor: pointer; }
 .slash button[aria-selected="true"] { background: var(--c3s); }
@@ -323,6 +330,8 @@ body.pane-open .top-btn span { display: none; }
 body.pane-open .top-btn { padding: 8px 10px; }
 body.pane-open .pchip { padding-right: 3px; }
 body.pane-open .pchip > :not(:first-child) { display: none; }
+body.pane-open [data-live-text] { display: none; }
+body.pane-open .live { padding-left: 10px; padding-right: 10px; }
 .top-btn.running { border-color: var(--ok); color: var(--c1); }
 .top-btn.running svg { fill: var(--ok); stroke: var(--ok); }
 body.pane-open [data-pane-toggle] { background: var(--c3s); color: var(--c3d); border-color: color-mix(in srgb, var(--c3) 45%, transparent); }
@@ -355,8 +364,9 @@ body.pane-open [data-pane-toggle] { background: var(--c3s); color: var(--c3d); b
 .pane-empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; padding: 30px; text-align: center; background: var(--c2); color: var(--c6); font-size: 14px; }
 .pane-empty b { font: 800 26px/1 var(--f1); color: var(--c1); letter-spacing: -0.03em; }
 .pane-empty p { margin: 0 auto; max-width: 30rem; }
-.art-card { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 420px; padding: 12px 14px; border: 1px solid var(--line-l); border-radius: 16px; background: var(--c2); color: inherit; text-align: left; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
-.art-card:hover { border-color: var(--c3); box-shadow: 0 10px 24px -18px var(--c3); }
+.art-card { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 420px; padding: 12px 14px; border: 1px solid var(--line-l); border-radius: 16px; background: transparent; color: inherit; text-align: left; cursor: pointer; transition: border-color .2s, box-shadow .2s; }
+.art-card:hover { border-color: color-mix(in srgb, var(--c3) 55%, transparent); background: var(--c3s); }
+.art-card:active { transform: translateY(1px); }
 .art-card svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--c3); stroke-width: 1.8; stroke-linejoin: round; }
 .art-card b { display: block; font-size: 14px; } .art-card span { font-size: 12px; color: var(--c6); }
 .shots { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -473,6 +483,8 @@ a.fchip:hover { box-shadow: inset 0 0 0 1.5px var(--c3); }
 .msg.handoff .hbox { padding: 10px 15px 4px; border: 1.5px dashed color-mix(in srgb, var(--c3) 45%, transparent); border-radius: 16px; background: var(--c3s); font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .msg.handoff .meta { margin: 0 0 4px; } .msg.handoff .meta i { font-style: normal; color: var(--c3); font-weight: 600; }
 .msg.handoff .hbox p { margin: 0 0 6px; }
+.msg.handoff .hbox .meta { flex-wrap: wrap; row-gap: 2px; }
+.msg.handoff .hbox .meta > * { white-space: nowrap; }
 .aiic.sm { width: 20px; height: 20px; border-radius: 6px; } .aiic.sm svg { width: 12px; }
 
 .greet { display: grid; place-content: center; justify-items: center; gap: 26px; min-height: 100%; padding: 30px 10px; text-align: center; }
@@ -521,7 +533,7 @@ body[data-theme="light"] { --c4: #f0eff5; --line-l: #e7e6ee; background: #f5f5f8
 [data-theme="warm"] dialog .btn--ghost, [data-theme="light"] dialog .btn--ghost { box-shadow: inset 0 0 0 1.5px #d8d2c3; }
 /* dark: everything dark, softer contrast */
 body[data-theme="dark"] { --c3: #7352f5; --c3d: #8a6dff; --c3s: #262037; --line-l: #2a2833; }
-[data-theme="dark"] .main { --c1: #ecebf2; --c6: #a3a0ad; --c5: #706d7b; --c4: #23212b; background: #131218; color: #ecebf2; box-shadow: 0 0 0 1px #24222c; }
+[data-theme="dark"] .main { --panel: #1c1a24; --c1: #ecebf2; --c6: #a3a0ad; --c5: #706d7b; --c4: #23212b; background: #131218; color: #ecebf2; box-shadow: 0 0 0 1px #24222c; }
 [data-theme="dark"] .ubub { background: #23212b; }
 [data-theme="dark"] .msg.partner .ubub { background: color-mix(in srgb, var(--pc) 18%, #131218); }
 [data-theme="dark"] .tools, [data-theme="dark"] .composer form.box, [data-theme="dark"] .suggest button { background: #1a1920; border-color: #2a2833; }
@@ -532,6 +544,12 @@ body[data-theme="dark"] { --c3: #7352f5; --c3d: #8a6dff; --c3s: #262037; --line-
 [data-theme="dark"] .aiic { background: #2a211d !important; box-shadow: inset 0 0 0 1px #3a2c25 !important; }
 [data-theme="dark"] .msg.handoff .hbox { background: #1d1928; }
 [data-theme="dark"] .task { background: #1a1920; }
+/* light themes: task cards sit on the page surface instead of the old black template card */
+[data-theme="warm"] .task, [data-theme="light"] .task { background: var(--panel, #fff); color: var(--c1); box-shadow: 0 0 0 1px var(--line-l), 0 12px 28px -24px rgba(30,20,10,.35); }
+[data-theme="warm"] .task::before, [data-theme="light"] .task::before { opacity: .16; }
+[data-theme="warm"] .task:hover::before, [data-theme="light"] .task:hover::before { opacity: .26; }
+[data-theme="warm"] .task .badge, [data-theme="light"] .task .badge { border-color: var(--line-l); background: var(--c4); color: var(--c1); }
+[data-theme="warm"] .task p, [data-theme="light"] .task p { color: var(--c6); }
 [data-theme="dark"] .row { background: #1a1920; }
 [data-theme="dark"] .top-btn { border-color: #2a2833; }
 [data-theme="dark"] .pchip { background: #1f1d26; }
@@ -646,7 +664,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     </div>
     <div class="pane-run" data-pane-run>
       <span class="run-dot" data-run-dot></span>
-      <input data-run-cmd spellcheck="false" placeholder="Команда запуска, например npm run dev (пусто: Cowork подберёт сам)" aria-label="Команда запуска">
+      <input data-run-cmd spellcheck="false" placeholder="npm run dev, или пусто: Cowork подберёт" aria-label="Команда запуска" title="Команда запуска приложения. Оставьте пустой, и Cowork подберёт её сам">
       <button class="pane-pill" type="button" data-run>Запустить</button>
       <button class="pane-pill ghost" type="button" data-run-log-toggle>Лог</button>
     </div>
@@ -1769,7 +1787,10 @@ ${FENCE}
   const pane = $("[data-pane]"), frame = $("[data-pane-frame]"), paneUrl = $("[data-pane-url]"), paneEmpty = $("[data-pane-empty]");
   const artText = new Map();   // artifact cid -> html
   let paneArt = null, paneHist = [];
+  let paneFolded = false;
   function openPane(on = true) {
+    if (on && pane.hidden && innerWidth < 1280 && !document.body.classList.contains("collapsed")) { setCollapsed(true); paneFolded = true; }
+    if (!on && !pane.hidden && paneFolded) { setCollapsed(false); paneFolded = false; }
     pane.hidden = !on; document.body.classList.toggle("pane-open", on);
     try { localStorage.setItem("cw.pane", on ? "1" : ""); } catch {}
     if (on) { $("[data-run-cmd]").value = proj?.runCmd || ""; renderArts(); }
