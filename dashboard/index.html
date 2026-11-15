@@ -318,6 +318,10 @@ body.pane-open [data-pane-toggle] { background: var(--c3s); color: var(--c3d); b
 .pane-bar { display: flex; align-items: center; gap: 6px; padding: 10px 10px 8px; border-bottom: 1px solid var(--line-l); }
 .pane-btn { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--c6); cursor: pointer; }
 .pane-btn:hover { background: var(--c3s); color: var(--c3d); }
+.pane-btn.share[aria-pressed="true"] { background: var(--c3s); color: var(--c3d); }
+.pane-who { display: none; padding: 6px 12px 0; font-size: 12px; color: var(--c6); }
+.pane-who.on { display: block; }
+.pane-who b { color: var(--c3d); font-weight: 600; }
 .pane-btn svg, .top-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .pane-url { flex: 1; min-width: 0; }
 .pane-url input, .pane-run input { width: 100%; height: 32px; padding: 0 12px; border: 1px solid var(--line-l); border-radius: 10px; background: var(--c4); color: inherit; font: 13px var(--f2); outline: none; }
@@ -623,6 +627,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       <button class="pane-btn" type="button" data-pane-reload title="Обновить" aria-label="Обновить"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       <form class="pane-url" data-pane-go><input data-pane-url spellcheck="false" placeholder="localhost:3000, сайт или артефакт" aria-label="Адрес"></form>
       <button class="pane-btn" type="button" data-pane-shot title="Скриншот в сообщение" aria-label="Скриншот в сообщение"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="pane-btn share" type="button" data-pane-share title="Общий просмотр: напарник видит то же, что вы, и наоборот" aria-pressed="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M15.5 14.2c2.6-.4 4.8 1 5.5 3.8"/></svg></button>
       <button class="pane-btn" type="button" data-pane-ext title="Открыть в браузере" aria-label="Открыть в браузере"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M19 14v5H5V5h5"/></svg></button>
       <button class="pane-btn" type="button" data-pane-close title="Закрыть панель" aria-label="Закрыть панель"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
@@ -633,6 +638,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       <button class="pane-pill ghost" type="button" data-run-log-toggle>Лог</button>
     </div>
     <pre class="run-log" data-run-log hidden></pre>
+    <div class="pane-who" data-pane-who></div>
     <div class="pane-arts" data-pane-arts></div>
     <div class="pane-body"><iframe data-pane-frame title="Просмотр" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"></iframe>
       <div class="pane-empty" data-pane-empty><b>Просмотр</b><p>Здесь открываются артефакты, которые делает Claude, и ваше приложение. Впишите адрес или команду запуска выше.</p></div></div>
@@ -791,7 +797,8 @@ body[data-theme] .msg.note .ubub { background: none; }
 
   // ---------- state ----------
   const people = new Map(), seen = new Set(), seenCid = new Set(), shown = new Set(), runs = new Map(), remoteLive = new Map(), queues = new Map(), queuedAsks = new Set();
-  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop", "wait"]);
+  let my21 = false;   // 21st.dev signed in on this computer
+  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop", "wait", "view"]);
   let events = [], seq = 0, es = null, conn = "off", view = "chat", chatId = null, target = store.get("cw.target") || "claude", ccOk = false, shareCommands = false, repoUrl = "";
 
   const chatOf = e => e.chat || (e.session ? "s-" + e.user + "-" + e.session : null);
@@ -815,7 +822,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       let p = people.get(e.user);
       if (!p) { p = { last: 0, ended: false, idle: true, now: "", branch: "", files: new Map() }; people.set(e.user, p); }
       const t = e.ts ? Date.parse(e.ts) : (timeSec ? timeSec * 1000 : Date.now());
-      if (!isNaN(t) && t >= (p.seen || 0)) { p.seen = t; p.bye = !!e.bye; if (e.app) p.app = String(e.app); }
+      if (!isNaN(t) && t >= (p.seen || 0)) { p.seen = t; p.bye = !!e.bye; if (e.app) p.app = String(e.app); if (!e.bye) p.t21 = !!e.t21; }
       clearTimeout(ingest.pt); ingest.pt = setTimeout(() => render(), 300);
       return false;
     }
@@ -1218,7 +1225,7 @@ body[data-theme] .msg.note .ubub { background: none; }
 
     renderStatus();
     renderComposer();
-    if (!pane.hidden) renderArts();
+    try { if (!pane.hidden) renderArts(); followView(); } catch {}
     processAsks();
   }
 
@@ -1322,7 +1329,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       try { if (!proj.token && navigator.sendBeacon?.(base(), body)) return; fetch(base(), { method: "POST", keepalive: true, headers: proj.token ? { Authorization: "Bearer " + proj.token } : {}, body }); } catch {}
       return;
     }
-    publish({ event: "here", app: appVersion || undefined });
+    publish({ event: "here", app: appVersion || undefined, t21: my21 || undefined });
   }
   setInterval(() => { if (conn === "ok") sayHere(); }, 120e3);
   window.addEventListener("pagehide", () => sayHere(true));
@@ -1671,6 +1678,10 @@ ${FENCE}
 
 `;
   const blocks = (text, kind) => [...String(text || "").matchAll(new RegExp(FENCE + "cowork-" + kind + "[^\\n]*\\n([\\s\\S]*?)" + FENCE, "g"))].map(m => m[1].trim()).filter(Boolean);
+  // 21st.dev is signed in on one computer only; the other Claude asks that one for components
+  const check21 = () => native?.claude?.status21?.().then(r => { const was = my21; my21 = !!r?.ok; if (my21 !== was) sayHere(); }).catch(() => {});
+  setTimeout(check21, 1500); setInterval(check21, 10 * 60e3);
+  const HELP21 = mate => `\n\n(Служебно от Cowork: каталог компонентов 21st.dev подключён только на компьютере ${mate}. Если для этой задачи нужен компонент, шаблон, тема или логотип из 21st.dev, не пиши его сам, а поручи Claude на компьютере ${mate} блоком\n${FENCE}cowork-delegate\nзадание: какой компонент найти в 21st.dev, куда в проекте добавить, в какой ветке git работать и что запушить\n${FENCE}\nЕго отчёт придёт тебе отдельным сообщением, тогда подтяни ветку и продолжай. Если 21st.dev не нужен, просто работай.)`;
   function processDelegates() {
     if (!canClaude() || !proj) return;
     for (const e of events) {
@@ -1697,10 +1708,65 @@ ${FENCE}
     try { localStorage.setItem("cw.pane", on ? "1" : ""); } catch {}
     if (on) { $("[data-run-cmd]").value = proj?.runCmd || ""; renderArts(); }
   }
-  function showUrl(u, push = true) {
+  // shared view: what one person opens in the pane, the other sees too.
+  // Sites and artifacts open live on both sides; the other's localhost can't be reached, so it comes as a snapshot that refreshes
+  let paneShare = true, paneLocal = false, shotTimer = 0, lastShot = "", viewSeen = "", paneWho = "";
+  try { paneShare = localStorage.getItem("cw.paneShare") !== "0"; } catch {}
+  const isLocalUrl = u => /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1?\])(:|\/|$)/i.test(u);
+  const setWho = t => { paneWho = t; const el = $("[data-pane-who]"); el.innerHTML = t; el.classList.toggle("on", !!t); };
+  function renderShare() { $("[data-pane-share]").setAttribute("aria-pressed", String(paneShare)); }
+  renderShare();
+  $("[data-pane-share]").addEventListener("click", () => {
+    paneShare = !paneShare; renderShare(); try { localStorage.setItem("cw.paneShare", paneShare ? "1" : "0"); } catch {}
+    flash(paneShare ? "Общий просмотр включён: напарник видит, что открыто у вас, и вы видите его." : "Общий просмотр выключен.");
+    if (!paneShare) { clearInterval(shotTimer); setWho(""); }
+  });
+  function shareView(fields) {
+    clearInterval(shotTimer); paneLocal = false; setWho("");
+    if (!paneShare || !proj) return;
+    publish({ event: "view", ...fields });
+    if (fields.url && isLocalUrl(fields.url)) { paneLocal = true; lastShot = ""; setTimeout(sendShot, 2500); shotTimer = setInterval(sendShot, 15000); }
+  }
+  async function sendShot() {
+    if (!paneLocal || !paneShare || pane.hidden || !native?.pane || document.hidden) return;
+    const r0 = $(".pane-body").getBoundingClientRect(); if (r0.width < 50) return;
+    const r = await native.pane.capture({ x: r0.left, y: r0.top, width: r0.width, height: r0.height });
+    if (!r?.data || r.data === lastShot) return;
+    lastShot = r.data;
+    const bin = atob(r.data), arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    let blob = new Blob([arr], { type: "image/png" });
+    try { const bmp = await createImageBitmap(blob); const cv = document.createElement("canvas"); cv.width = bmp.width; cv.height = bmp.height; cv.getContext("2d").drawImage(bmp, 0, 0); blob = await new Promise(res => cv.toBlob(res, "image/jpeg", 0.8)) || blob; } catch {}
+    try {
+      const headers = { Filename: "view.jpg", Message: "cowork-file" }; if (proj.token) headers.Authorization = "Bearer " + proj.token;
+      const res = await fetch(base(), { method: "PUT", headers, body: blob });
+      const j = res.ok ? await res.json() : null;
+      if (j?.attachment?.url && paneLocal) publish({ event: "view", url: frame.getAttribute("src") || "", shot: j.attachment.url });
+    } catch {}
+  }
+  // follow the partner's latest view (only fresh ones, and never echo it back)
+  function followView() {
+    if (!paneShare) return;
+    let v = null; for (let i = events.length - 1; i >= 0; i--) { const e = events[i]; if (e.event === "view" && e.user !== me) { v = e; break; } }
+    if (!v || v.cid === viewSeen || Date.now() - v.t > 10 * 60e3) return;
+    const mine = events.findLast?.(e => e.event === "view" && e.user === me);
+    viewSeen = v.cid;
+    if (mine && mine.t > v.t) return;
+    const who = `<b>${esc(v.user)}</b> показывает`;
+    if (v.art) { showArt(v.art, false, true).then(() => setWho(who + " артефакт")); return; }
+    const u = String(v.url || ""); if (!/^https?:\/\//.test(u)) return;
+    if (!isLocalUrl(u)) { showUrl(u, false, true); setWho(who + " сайт"); return; }
+    if (!v.shot) { setWho(`${who} своё приложение (${esc(u)}), снимок экрана сейчас придёт`); openPane(true); return; }
+    clearInterval(shotTimer); paneLocal = false; paneArt = null;
+    frame.removeAttribute("src"); frame.setAttribute("sandbox", "");
+    frame.srcdoc = `<body style="margin:0;background:#f4f3ef"><img src="${esc(imgSrc(String(v.shot)))}" style="width:100%;display:block" alt=""></body>`;
+    paneUrl.value = u; paneEmpty.hidden = true; openPane(true); renderArts();
+    setWho(`${who} своё приложение (${esc(u)}): это снимок экрана, он обновляется сам`);
+  }
+  function showUrl(u, push = true, remote = false) {
     u = String(u || "").trim(); if (!u) return;
     if (!/^[a-z]+:\/\//i.test(u)) u = (/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(u) ? "http://" : "https://") + u;
     if (!/^https?:\/\//i.test(u)) return;
+    if (!remote) shareView({ url: u });
     paneArt = null; frame.removeAttribute("srcdoc");
     frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads");
     frame.src = u; paneUrl.value = u; paneEmpty.hidden = true;
@@ -1715,8 +1781,9 @@ ${FENCE}
     if (html) artText.set(e.cid, html);
     return html;
   }
-  async function showArt(cid, push = true) {
+  async function showArt(cid, push = true, remote = false) {
     const e = events.find(x => x.cid === cid && x.event === "artifact"); if (!e) return;
+    if (!remote && push) shareView({ art: cid });
     const html = await artifactHtml(e);
     openPane(true);
     paneArt = cid; paneUrl.value = "артефакт: " + (e.n || "");
@@ -1883,6 +1950,7 @@ ${FENCE}
     let prompt = `${intro}${item.author}: ${item.text}`;
     if (item.team && mate) { run.team = true; run.mate = mate; prompt = `${intro}${TEAM_LEAD(mate)}\n\n${item.author}: ${item.text}`; }
     if (item.report) { run.team = true; run.mate = mate; prompt = `${intro}Отчёт второго Claude (компьютер ${item.from}):\n${item.text}\n\nПродолжай как ведущий: подтяни его ветку, слей части, проверь работу и коротко опиши людям итог. Если второму Claude нужно поручить ещё что-то, снова используй блок cowork-delegate.`; }
+    if (!run.team && !my21 && mate && people.get(mate)?.t21) { run.mate = mate; run.via21 = true; prompt += HELP21(mate); }
     if (!item.text && item.imgs?.length) prompt = prompt.replace(/: $/, item.imgs.some(i => i.f) ? ": (вложение без подписи)" : ": (фото без подписи)");
     prompt += await photoNote(item, proj.folder);
     if (runs.get(chat.id) !== run) return;
@@ -1907,7 +1975,7 @@ ${FENCE}
             run.live = ""; run.sentLive = "";
             safe(publish({ event: "reply", chat: run.chat, run: run.id, text: cut(b.text, 1400) }, { full: b.text }));
             if (run.helper) run.texts.push(b.text);
-            if (run.team && run.mate) for (const task of blocks(b.text, "delegate")) {
+            if ((run.team || run.via21) && run.mate) for (const task of blocks(b.text, "delegate")) {
               const recent = events.filter(x => x.event === "delegate" && x.chat === run.chat && Date.now() - x.t < 2 * 3600e3).length;
               if (recent >= 6) { flash("Claude слишком часто передаёт задания друг другу, остановил передачу."); break; }
               safe(publish({ event: "delegate", chat: run.chat, run: run.id, to: run.mate, text: cut(task, 1500) }, { full: task }));
@@ -2024,7 +2092,7 @@ ${FENCE}
           if (!r?.ok) { $("[data-21-state]").innerHTML = `<b class="bad">Не удалось открыть вход.</b> ${esc(r?.error || "")} Нужен Node.js (nodejs.org).`; return; }
           $("[data-21-state]").innerHTML = "<b>Открыл окно входа в 21st.dev.</b> Войдите в браузере, Cowork заметит сам.";
           clearInterval(w21); const t0 = Date.now();
-          w21 = setInterval(() => native.claude.status21().then(x => { if (x.ok || Date.now() - t0 > 10 * 60e3) { clearInterval(w21); st21(); } }), 4000);
+          w21 = setInterval(() => native.claude.status21().then(x => { if (x.ok || Date.now() - t0 > 10 * 60e3) { clearInterval(w21); st21(); check21(); } }), 4000);
         });
       });
       // после кнопки «Установить» проверяем каждые 5 секунд, пока Claude Code не появится (до 15 минут)
