@@ -78,14 +78,19 @@ autoUpdater.on("error", err => {
   sendStatus({ state: "error" });
   if (manualCheck) dialog.showMessageBox({ type: "warning", message: "Не удалось проверить обновления.", detail: String(err?.message || err) });
 });
+// спрашиваем про версию один раз: проверка каждые полчаса снова присылает update-downloaded, и окна копились
+let askedVersion = null;
 autoUpdater.on("update-downloaded", async info => {
   readyVersion = info.version;
   sendStatus({ state: "ready", version: info.version });
-  const { response } = await dialog.showMessageBox({
+  if (askedVersion === info.version && !manualCheck) return;
+  askedVersion = info.version;
+  const opts = {
     type: "info", buttons: ["Перезапустить сейчас", "Позже"], defaultId: 0, cancelId: 1,
     message: `Готова новая версия Cowork ${info.version}`,
     detail: "Перезапустите, чтобы обновиться. Если выберете «Позже», обновление установится при выходе."
-  });
+  };
+  const { response } = await (win && !win.isDestroyed() ? dialog.showMessageBox(win, opts) : dialog.showMessageBox(opts));
   if (response === 0) { quitting = true; autoUpdater.quitAndInstall(); }
 });
 
