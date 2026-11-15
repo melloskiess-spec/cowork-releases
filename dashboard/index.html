@@ -720,7 +720,7 @@ body[data-theme] .msg.note .ubub { background: none; }
 
   // ---------- state ----------
   const people = new Map(), seen = new Set(), seenCid = new Set(), shown = new Set(), runs = new Map(), remoteLive = new Map(), queues = new Map(), queuedAsks = new Set();
-  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop"]);
+  const HUMAN = new Set(["prompt", "ask", "note", "delegate", "report"]), HIDDEN = new Set(["take", "live", "stop", "wait"]);
   let events = [], seq = 0, es = null, conn = "off", view = "chat", chatId = null, target = store.get("cw.target") || "claude", ccOk = false, shareCommands = false, repoUrl = "";
 
   const chatOf = e => e.chat || (e.session ? "s-" + e.user + "-" + e.session : null);
@@ -744,7 +744,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       let p = people.get(e.user);
       if (!p) { p = { last: 0, ended: false, idle: true, now: "", branch: "", files: new Map() }; people.set(e.user, p); }
       const t = e.ts ? Date.parse(e.ts) : (timeSec ? timeSec * 1000 : Date.now());
-      if (!isNaN(t) && t >= (p.seen || 0)) { p.seen = t; p.bye = !!e.bye; }
+      if (!isNaN(t) && t >= (p.seen || 0)) { p.seen = t; p.bye = !!e.bye; if (e.app) p.app = String(e.app); }
       clearTimeout(ingest.pt); ingest.pt = setTimeout(() => render(), 300);
       return false;
     }
@@ -1003,6 +1003,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     const view$ = $('[data-panel="feed"]');
     const atBottom = view$.scrollHeight - view$.scrollTop - view$.clientHeight < 160;
     const taken = new Set(list.filter(e => e.event === "take").map(e => e.ask));
+    const waits = new Map(list.filter(e => e.event === "wait" && e.ask).map(e => [e.ask, String(e.text || "")]));
     const out = []; let group = null;
     const flushGroup = () => {
       if (!group) return;
@@ -1057,7 +1058,8 @@ body[data-theme] .msg.note .ubub { background: none; }
         flushSeg();
         const isNote = e.event === "note", key = "h" + (e.cid || e.seq), mine = e.user === me;
         const fresh = !shown.has(key); shown.add(key);
-        const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди: Claude закончит текущее и возьмётся" : "ждёт компьютер " + esc(e.to || c?.user || "") + ", там должен быть открыт Cowork"}</div>` : "";
+        const why = waits.get(e.cid);
+        const waiting = e.event === "ask" && !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди: Claude закончит текущее и возьмётся" : why ? esc(why) : "ждёт компьютер " + esc(e.to || c?.user || "") + ", там должен быть открыт Cowork"}</div>` : "";
         out.push(`<div class="msg user ${mine ? "mine" : "partner"} ${isNote ? "note" : ""} ${fresh ? "fresh" : ""}" style="--pc:${colorOf(e.user)}"><div class="meta">${isNote ? "<i>только напарнику</i> · " : ""}<b>${mine ? "Вы" : esc(e.user)}</b>${hhmm(e.t)}${!c && chatOf(e) ? ` · <a href="#" data-goto-chat="${esc(chatOf(e))}" style="color:var(--c3)">в чат</a>` : ""}${av(e.user, false)}</div>${(e.full || e.text) ? `<div class="ubub">${esc(e.full || e.text)}</div>` : ""}${imgsHtml(e)}${waiting}</div>`);
         continue;
       }
@@ -1096,7 +1098,7 @@ body[data-theme] .msg.note .ubub { background: none; }
 
     // presence in the header
     const plist = [...people.entries()].sort((a, b) => (a[0] === me) - (b[0] === me) || b[1].last - a[1].last).slice(0, 3);
-    $("[data-presence]").innerHTML = plist.map(([name, p]) => { const [cls, label] = stateOf(p, name); return `<div class="pchip is-${cls}" title="${esc(p.now || "")}">${av(name)}<div><b>${esc(name)}${name === me ? " · вы" : ""}</b><span>${esc(label)}</span></div></div>`; }).join("");
+    $("[data-presence]").innerHTML = plist.map(([name, p]) => { const [cls, label] = stateOf(p, name); return `<div class="pchip is-${cls}" title="${esc([p.app ? "Cowork " + p.app : "", p.now || ""].filter(Boolean).join(" · "))}">${av(name)}<div><b>${esc(name)}${name === me ? " · вы" : ""}</b><span>${esc(label)}</span></div></div>`; }).join("");
 
     // title
     const c = currentChat();
@@ -1244,7 +1246,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       try { if (!proj.token && navigator.sendBeacon?.(base(), body)) return; fetch(base(), { method: "POST", keepalive: true, headers: proj.token ? { Authorization: "Bearer " + proj.token } : {}, body }); } catch {}
       return;
     }
-    publish({ event: "here" });
+    publish({ event: "here", app: appVersion || undefined });
   }
   setInterval(() => { if (conn === "ok") sayHere(); }, 120e3);
   window.addEventListener("pagehide", () => sayHere(true));
@@ -1364,6 +1366,7 @@ body[data-theme] .msg.note .ubub { background: none; }
 
   // ---------- composer ----------
   const say = $("[data-say]"), msg = say.message, sendBtn = say.querySelector(".send"), hint = $("[data-hint]");
+  let ccChecked = false;
   const canClaude = () => !!(native?.claude && ccOk && proj?.folder);
   function renderComposer() {
     const c = currentChat(), inChat = view === "chat";
@@ -1517,6 +1520,7 @@ body[data-theme] .msg.note .ubub { background: none; }
   function enqueue(chat, item) {
     const q = queues.get(chat) || []; q.push({ ...item, pid: proj.id }); queues.set(chat, q);
     if (item.ask) queuedAsks.add(item.ask);
+    if (item.ask && runs.has(chat)) publish({ event: "wait", chat, ask: item.ask, text: `в очереди у ${me}: Claude заканчивает предыдущее и возьмётся` });
     if (!runs.has(chat)) startNext(chat); else render();
   }
   function startNext(chat) {
@@ -1530,10 +1534,31 @@ body[data-theme] .msg.note .ubub { background: none; }
   }
   // asks addressed to this computer in its chats (also ones sent while the app was closed)
   let asking = false;
+  const told = new Set();   // asks we already explained, so the reason is sent once
+  function tellWhy(e, text) {
+    const key = e.cid + "|" + text; if (told.has(key)) return; told.add(key);
+    if (events.some(x => x.event === "wait" && x.ask === e.cid && x.text === text && x.user === me)) return;
+    publish({ event: "wait", chat: e.chat, ask: e.cid, text });
+  }
   function processAsks() {
-    if (asking || !canClaude() || !proj) return;
+    if (asking || !proj) return;
+    // a partner writes to my Claude, but it can't run here: say why instead of leaving them waiting
+    if (!canClaude()) {
+      if (native?.claude && ccChecked) for (const e of events) {
+        if (e.event !== "ask" || e.user === me || e.to !== me || Date.now() - e.t > 12 * 3600e3 || events.some(x => x.event === "take" && x.ask === e.cid)) continue;
+        tellWhy(e, !ccOk ? `на компьютере ${me} не найден Claude Code: ${me} нужно открыть настройки проекта и установить его` : `у ${me} не выбрана папка проекта в настройках`);
+      }
+      return;
+    }
     asking = true;
     try {
+      // my chat that this install doesn't know (Cowork reinstalled, data cleared): take it back with a fresh Claude session
+      for (const e of events) {
+        if (e.event === "ask" && e.to === me && e.user !== me && e.chat && !myChats.some(c => c.id === e.chat) && Date.now() - e.t < 12 * 3600e3 && !events.some(x => x.event === "take" && x.ask === e.cid)) {
+          const first = events.find(x => chatOf(x) === e.chat && (x.event === "prompt" || x.event === "ask"));
+          myChats.push({ id: e.chat, title: cut(first?.chatTitle || first?.text || "Чат", 60), sid: "", t: first?.t || e.t }); saveChats();
+        }
+      }
       const mine = new Set(myChats.map(c => c.id));
       for (const e of events) {
         const isReport = e.event === "report" && e.to === me;
@@ -1776,8 +1801,8 @@ ${FENCE}
     renderUpd();
     if (native.claude) {
       $("[data-cc-setup]").hidden = false; $("[data-cc-setup2]").hidden = false;
-      const ccCheck = () => { $("[data-cc-state]").textContent = "Проверяю Claude Code…"; native.claude.check().then(r => {
-        ccOk = !!r.ok;
+      const ccCheck = () => { ccChecked = false; $("[data-cc-state]").textContent = "Проверяю Claude Code…"; native.claude.check().then(r => {
+        ccOk = !!r.ok; ccChecked = true;
         const pick = ' <a href="#" data-cc-pick style="color:var(--c3)">указать путь к claude вручную</a>', again = ' <a href="#" data-cc-recheck style="color:var(--c3)">проверить снова</a>';
         $("[data-cc-state]").innerHTML = r.ok ? `<b>Claude Code ${esc(r.version)}</b> найден. Работает на вашей подписке.`
           : r.bin ? `<b class="bad">Claude Code найден, но не запускается.</b> <code>${esc(r.bin)}</code>${r.error ? `<br>${esc(r.error)}` : ""}<br>${again} ·${pick}`
