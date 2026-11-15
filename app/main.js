@@ -229,6 +229,25 @@ ipcMain.handle("claude:install", () => {
     return { ok: true };
   } catch (e) { return { ok: false, error: String(e.message || e) }; }
 });
+// 21st.dev: вход хранится у пользователя (~/.config/21st/auth.json), Cowork его не читает, только проверяет, что он есть
+function has21st() {
+  if (process.env.TWENTYFIRST_TOKEN || process.env.API_KEY_21ST) return true;
+  const home = require("os").homedir();
+  return [path.join(home, ".config", "21st", "auth.json"), path.join(process.env.APPDATA || "", "21st", "auth.json")].some(isFile);
+}
+ipcMain.handle("claude:21st-status", () => ({ ok: has21st() }));
+ipcMain.handle("claude:21st-login", () => {
+  const script = `$Host.UI.RawUI.WindowTitle = 'Cowork: вход в 21st.dev'
+Write-Host 'Сейчас откроется браузер: войдите в свой аккаунт 21st.dev. Потом это окно можно закрыть.' -ForegroundColor Magenta
+npx -y @21st-dev/cli login
+npx -y @21st-dev/cli whoami
+npx -y @21st-dev/cli usage`;
+  try {
+    if (isWin) spawn("powershell.exe", ["-NoExit", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { detached: true, stdio: "ignore", windowsHide: false, env: claudeEnv() }).unref();
+    else spawn("npx", ["-y", "@21st-dev/cli", "login"], { detached: true, stdio: "ignore", env: claudeEnv() }).unref();
+    return { ok: true };
+  } catch (e) { return { ok: false, error: String(e.message || e) }; }
+});
 ipcMain.handle("claude:pick-bin", async () => {
   const r = await dialog.showOpenDialog(win, { title: "Где лежит claude", properties: ["openFile"],
     filters: isWin ? [{ name: "Claude Code", extensions: ["exe", "cmd", "bat"] }] : [] });
@@ -303,12 +322,17 @@ ipcMain.on("claude:run", (e, { id, prompt, cwd, resume, perm, self, team }) => {
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
     "--permission-mode", PERMS.has(perm) ? perm : "acceptEdits"];
   // вкладка «Cowork»: Claude правит код самого приложения, ему можно git и npm, чтобы выпустить обновление
-  if (self) args.push("--allowedTools", "Bash(git:*)", "Bash(npm:*)", "Bash(node:*)");
+  const allow = [];
+  if (self) allow.push("Bash(git:*)", "Bash(npm:*)", "Bash(node:*)");
   // «Оба Claude»: ветки, коммиты, push и слияние нужны обоим даже в режиме «Менять файлы»
-  else if (team) args.push("--allowedTools", "Bash(git:*)");
+  else if (team) allow.push("Bash(git:*)");
+  // 21st.dev: каталог компонентов по подписке пользователя, если он вошёл через «Подключить 21st.dev»
+  const has21 = has21st();
+  if (has21) allow.push("Bash(npx @21st-dev/cli:*)", "Bash(npx -y @21st-dev/cli:*)", "Bash(21st:*)");
+  if (allow.length) args.push("--allowedTools", ...allow);
   if (resume && /^[0-9a-f-]{36}$/i.test(resume)) args.push("--resume", resume);
   // ответы в чате Cowork читают люди, иногда не программисты: коротко и понятно
-  args.push("--append-system-prompt", "Ты отвечаешь в чате приложения Cowork, его читают оба участника проекта. Пиши коротко и понятно, простым языком: обычно не больше трёх-пяти предложений. Сначала результат, потом только то, что человеку нужно знать или сделать. Без длинных списков, лишних технических подробностей и пересказа своих шагов, если об этом не просят. Отвечай на языке собеседника.");
+  args.push("--append-system-prompt", "Ты отвечаешь в чате приложения Cowork, его читают оба участника проекта. Пиши коротко и понятно, простым языком: обычно не больше трёх-пяти предложений. Сначала результат, потом только то, что человеку нужно знать или сделать. Без длинных списков, лишних технических подробностей и пересказа своих шагов, если об этом не просят. Отвечай на языке собеседника." + (has21 ? " У пользователя есть доступ к каталогу 21st.dev: когда нужен интерфейсный компонент, шаблон, тема или логотип, сначала поищи его командой npx -y @21st-dev/cli search и запросом на английском, код бери через npx -y @21st-dev/cli get с номером из поиска или add автор/название, и только если ничего не подходит, пиши сам. Команда npx -y @21st-dev/cli usage показывает лимиты подписки." : ""));
   // хуки трансляции молчат: события в канал отправляет само приложение, без дублей
   const env = claudeEnv({ COWORK_ENABLED: "0" });
   let p;

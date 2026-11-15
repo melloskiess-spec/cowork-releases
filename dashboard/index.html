@@ -591,6 +591,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     <div data-cc-setup2 hidden style="display:grid;gap:16px">
       <label>Что Claude может делать без вопросов<select name="perm"><option value="acceptEdits">Менять файлы (рекомендуется)</option><option value="bypassPermissions">Всё, включая команды</option><option value="plan">Ничего, только план</option></select></label>
       <div class="cc-state" data-cc-state>Проверяю Claude Code…</div>
+      <div class="cc-state" data-21-state hidden></div>
     </div>
     <div class="actions">
       <button class="btn" type="submit" value="ok" data-setup-ok>Сохранить</button>
@@ -1811,6 +1812,23 @@ ${FENCE}
       }); };
       ccCheck();
       document.addEventListener("click", ev => { if (ev.target.closest("[data-cc-recheck]")) { ev.preventDefault(); ccCheck(); } });
+      // 21st.dev: the user signs in on this computer; Claude here then uses the catalog on their subscription
+      const st21 = () => native.claude.status21?.().then(r => {
+        const el = $("[data-21-state]"); if (!el || !r) return; el.hidden = false;
+        el.innerHTML = r.ok ? "<b>21st.dev подключён.</b> Claude берёт компоненты из каталога по вашей подписке."
+          : '<b>21st.dev</b> не подключён. <a href="#" data-21-login style="color:var(--c3)">Подключить 21st.dev</a>: откроется окно, войдите в свой аккаунт, и Claude сможет брать компоненты по вашей подписке.';
+      });
+      st21();
+      let w21 = null;
+      document.addEventListener("click", ev => {
+        if (!ev.target.closest("[data-21-login]")) return; ev.preventDefault();
+        native.claude.login21?.().then(r => {
+          if (!r?.ok) { $("[data-21-state]").innerHTML = `<b class="bad">Не удалось открыть вход.</b> ${esc(r?.error || "")} Нужен Node.js (nodejs.org).`; return; }
+          $("[data-21-state]").innerHTML = "<b>Открыл окно входа в 21st.dev.</b> Войдите в браузере, Cowork заметит сам.";
+          clearInterval(w21); const t0 = Date.now();
+          w21 = setInterval(() => native.claude.status21().then(x => { if (x.ok || Date.now() - t0 > 10 * 60e3) { clearInterval(w21); st21(); } }), 4000);
+        });
+      });
       // после кнопки «Установить» проверяем каждые 5 секунд, пока Claude Code не появится (до 15 минут)
       let ccWatch = null;
       document.addEventListener("click", ev => {
