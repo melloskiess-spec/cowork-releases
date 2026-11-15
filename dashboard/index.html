@@ -497,24 +497,59 @@ a.fchip:hover { box-shadow: inset 0 0 0 1.5px var(--c3); }
 
 .composer { padding: 0 22px 18px; }
 .composer form.box { max-width: 760px; display: block; padding: 0; border-radius: 22px; background: #fff; color: var(--c1); border: 1px solid var(--line-l); box-shadow: 0 10px 30px -16px rgb(13 12 17 / .25); }
-.composer form.box:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c3) 22%, transparent), 0 10px 30px -16px rgb(13 12 17 / .25); border-color: color-mix(in srgb, var(--c3) 55%, transparent); }
+.composer form.box:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc, var(--c3)) 22%, transparent), 0 10px 30px -16px rgb(13 12 17 / .25); border-color: var(--mc, var(--c3)); }
+/* who gets the message: the composer takes the colour of its recipient, and says it on the send button */
+.composer form.box[data-mode="partner"] { --mc: var(--pc, #3b82f6); border-color: color-mix(in srgb, var(--mc) 45%, transparent); background: color-mix(in srgb, var(--mc) 4%, var(--panel, #fff)); }
+[data-theme="dark"] .composer form.box[data-mode="partner"] { background: color-mix(in srgb, var(--mc) 7%, #1a1920); }
+.composer form.box[data-mode="team"] { border-color: color-mix(in srgb, var(--c3) 45%, transparent); }
+.composer form.box .send { width: auto; min-width: 36px; padding: 0 12px 0 14px; gap: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--r2); }
+.composer form.box .send .to { font: 600 12.5px var(--f2); white-space: nowrap; }
+.composer form.box[data-mode="partner"] .send:not(:disabled) { background: var(--mc); color: #fff; }
+.composer .send.stop .to { display: none; }
+.chat .del { width: 24px; height: 24px; border-radius: 8px; }
+/* ghost buttons do not carry the signature dot: it marks the main action only */
+.btn--ghost::before { display: none; }
+/* help cards: plain headings, mono only for real commands */
+.cmd code { font: 700 19px/1.15 var(--f1); letter-spacing: -0.02em; }
+.cmd code.k { font: 700 18px/1 var(--mono); }
+/* task cards: no decorative blob, a calmer title */
+.task::before { display: none; }
+.task h3 { font-size: 20px; line-height: 1.15; }
+/* artifact on screen: the run bar belongs to the app, not to an artifact */
+.pane.art-mode .pane-run, .pane.art-mode .run-log { display: none !important; }
+.pane-gone { position: absolute; inset: 0; display: grid; place-content: center; gap: 12px; padding: 30px; text-align: center; background: var(--c2); color: var(--c6); font-size: 14px; }
+.pane-gone[hidden] { display: none; }
+.pane-gone b { font: 800 22px/1.1 var(--f1); color: var(--c1); }
+.pane-gone p { margin: 0 auto; max-width: 30rem; }
+.pane-gone .pane-pill { justify-self: center; }
+.setup details.adv { border-top: 1px solid var(--line-d); padding-top: 10px; }
+.setup details.adv summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--c5); list-style: none; }
+.setup details.adv summary::-webkit-details-marker { display: none; }
+.setup details.adv summary::before { content: "+ "; }
+.setup details.adv[open] summary::before { content: "− "; }
+.setup details.adv > div { display: grid; gap: 16px; margin-top: 14px; }
+@media (max-width: 760px) {
+  .side-new { display: block !important; }
+  .chats { display: grid !important; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px); overflow-x: auto; overflow-y: hidden; max-height: 52px; padding-bottom: 6px; }
+  .chats .chat-group { display: none; }
+}
 .composer form.box textarea { display: block; width: 100%; min-height: 58px; max-height: 220px; padding: 15px 18px 4px; font-size: 15px; color: var(--c1); }
 .composer form.box textarea::placeholder { color: var(--c5); }
 .composer .bar { display: flex; align-items: center; gap: 10px; padding: 6px 8px 8px 10px; }
 .composer .bar .target { background: var(--c4); }
 .composer .bar .target button { color: var(--c6); padding: 5px 11px; font-size: 12.5px; }
 .composer .bar .target button[aria-pressed="true"] { color: #fff; }
-.composer .bar .hint { flex: 1; min-width: 0; margin: 0; text-align: left; font-size: 11.5px; color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer .bar .hint { flex: 1; min-width: 0; margin: 0; text-align: left; font-size: 12px; color: var(--c5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .composer .send { width: 36px; height: 36px; border-radius: 12px; background: var(--c3); transition: transform .3s var(--out), background .25s; }
 .composer .send:hover:not(:disabled) { background: var(--c3d); }
 .composer .send:disabled { background: var(--c4); color: var(--c5); opacity: 1; }
 .composer .send.stop { background: var(--c3s); color: var(--c3d); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c3) 40%, transparent); }
 .composer .owner-note { margin-bottom: 8px; }
 /* ---------- themes: "classic" is the original look; others re-tint the same layout ---------- */
-body[data-theme="warm"] { --c3: #c96442; --c3d: #a9502f; --c3s: #f7ebe3; --c4: #efebe1; --line-l: #e7e2d6; background: #f0eee6; color: #1f1e1d; }
+body[data-theme="warm"] { --c3: #b5532f; --c3d: #93421f; --c3s: #f7ebe3; --c4: #efebe1; --line-l: #e7e2d6; background: #f0eee6; color: #1f1e1d; }
 body[data-theme="light"] { --c4: #f0eff5; --line-l: #e7e6ee; background: #f5f5f8; color: #17161c; }
-[data-theme="warm"] .side { --c2: #1f1e1d; --c1: #f0eee6; --c8: #e7e3d8; --c7: #e0dbcd; --c5: #78756c; --c6: #a29e93; --line-d: #ddd8ca; background: transparent; border-right: 0; }
-[data-theme="light"] .side { --c2: #17161c; --c1: #f5f5f8; --c8: #ebebf0; --c7: #e3e2ea; --c5: #74727d; --c6: #9d9ba6; --line-d: #e1e0e8; background: transparent; border-right: 0; }
+[data-theme="warm"] .side { --c2: #1f1e1d; --c1: #f0eee6; --c8: #e7e3d8; --c7: #e0dbcd; --c5: #5f5c55; --c6: #6e6a63; --line-d: #ddd8ca; background: transparent; border-right: 0; }
+[data-theme="light"] .side { --c2: #17161c; --c1: #f5f5f8; --c8: #ebebf0; --c7: #e3e2ea; --c5: #5f5d68; --c6: #6c6a76; --line-d: #e1e0e8; background: transparent; border-right: 0; }
 [data-theme="warm"] .main { background: #fbfaf7; box-shadow: 0 0 0 1px #e7e2d6, 0 18px 50px -30px rgb(80 50 20 / .35); }
 [data-theme="light"] .main { background: #fff; box-shadow: 0 0 0 1px #e7e6ee, 0 18px 50px -30px rgb(20 10 60 / .25); }
 [data-theme="warm"] .pmenu, [data-theme="light"] .pmenu { box-shadow: 0 24px 60px -24px rgb(0 0 0 / .35); }
@@ -533,12 +568,12 @@ body[data-theme="light"] { --c4: #f0eff5; --line-l: #e7e6ee; background: #f5f5f8
 [data-theme="warm"] dialog .btn--ghost, [data-theme="light"] dialog .btn--ghost { box-shadow: inset 0 0 0 1.5px #d8d2c3; }
 /* dark: everything dark, softer contrast */
 body[data-theme="dark"] { --c3: #7352f5; --c3d: #8a6dff; --c3s: #262037; --line-l: #2a2833; }
-[data-theme="dark"] .main { --panel: #1c1a24; --c1: #ecebf2; --c6: #a3a0ad; --c5: #706d7b; --c4: #23212b; background: #131218; color: #ecebf2; box-shadow: 0 0 0 1px #24222c; }
+[data-theme="dark"] .main { --panel: #1c1a24; --c1: #ecebf2; --c6: #a3a0ad; --c5: #8b8896; --c4: #23212b; background: #131218; color: #ecebf2; box-shadow: 0 0 0 1px #24222c; }
 [data-theme="dark"] .ubub { background: #23212b; }
 [data-theme="dark"] .msg.partner .ubub { background: color-mix(in srgb, var(--pc) 18%, #131218); }
 [data-theme="dark"] .tools, [data-theme="dark"] .composer form.box, [data-theme="dark"] .suggest button { background: #1a1920; border-color: #2a2833; }
 [data-theme="dark"] .composer form.box textarea { color: #ecebf2; }
-[data-theme="dark"] .composer .send:disabled { background: #26242e; color: #5e5b68; }
+[data-theme="dark"] .composer .send:disabled { background: #26242e; color: #7d7a88; }
 [data-theme="dark"] .reply pre { background: #0b0a0f; color: #e6e5ee; }
 [data-theme="dark"] .reply code { background: #26242e; }
 [data-theme="dark"] .aiic { background: #2a211d !important; box-shadow: inset 0 0 0 1px #3a2c25 !important; }
@@ -560,7 +595,16 @@ body[data-theme="dark"] { --c3: #7352f5; --c3d: #8a6dff; --c3s: #262037; --line-
 .themes button[aria-pressed="true"] { border-color: var(--c3); color: var(--c2); }
 .themes i { width: 34px; height: 22px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgb(127 127 127 / .3); }
 [data-theme="dark"] .reply pre code { background: none; }
-body[data-theme] .msg.note .ubub { background: none; }
+/* contrast floor (critique): secondary text, placeholders and tags reach 4.5:1 in every theme */
+body:not([data-theme="dark"]) .main, body:not([data-theme="dark"]) dialog { --c5: #75727f; }
+[data-theme="dark"] .side, [data-theme="classic"] .side { --c6: #8d8a98; }
+.chat[aria-current="true"] .cm { color: var(--c5); }
+input::placeholder, textarea::placeholder { color: var(--c5); opacity: 1; }
+.msg.note .meta i, .msg.handoff .meta i { color: var(--c3d); }
+[data-theme="dark"] .pane { --c2: #1a1920; }
+.chat-group { font-size: 11px; }
+/* a note to the partner is a solid tinted bubble; dashed now means only Claude-to-Claude */
+body[data-theme] .msg.note .ubub, .msg.note .ubub { background: color-mix(in srgb, var(--c3) 7%, transparent); border: 1.5px solid color-mix(in srgb, var(--c3) 28%, transparent); }
 </style>
 </head>
 <body>
@@ -587,7 +631,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     <div class="side-foot">
       <button class="btn btn--ghost invite" type="button" data-invite>Пригласить напарника</button>
       <div class="upd" data-upd hidden><span data-upd-text><b>Cowork</b>обновления</span><button type="button" data-upd-btn>Проверить</button></div>
-      <div class="conn"><b><span class="ldot" data-ldot></span><span data-conn>Не подключено</span></b><span data-conn-sub>Нажмите на шестерёнку</span></div>
+      <div class="conn"><b><span class="ldot" data-ldot></span><span data-conn>Не подключено</span></b><span data-conn-sub>Создайте проект в меню слева</span></div>
     </div>
   </aside>
 
@@ -602,12 +646,12 @@ body[data-theme] .msg.note .ubub { background: none; }
       <button class="top-btn" type="button" data-app-btn title="Запустить приложение проекта и смотреть, как оно меняется. Напарник видит то же"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></svg><span>Приложение</span></button>
       <button class="top-btn" type="button" data-pane-toggle title="Панель просмотра: артефакты, приложение, сайты"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M14 4v16"/></svg><span>Просмотр</span></button>
       <div class="presence" data-presence></div>
-      <div class="live" data-live><span class="ldot"></span><span data-live-text>офлайн</span></div>
+      <div class="live" data-live role="status" aria-live="polite"><span class="ldot"></span><span data-live-text>офлайн</span></div>
     </header>
 
-    <section class="view" data-panel="feed" aria-label="Лента">
+    <section class="view" data-panel="feed" aria-label="Лента" role="log" aria-live="polite" aria-relevant="additions">
       <div class="wrap" data-feed></div>
-      <div class="greet" data-hello><h2 data-hello-title>Hello<span class="dot"></span></h2><p data-hello-text></p><div class="suggest" data-suggest></div></div>
+      <div class="greet" data-hello><h2 data-hello-title>Пока тихо<span class="dot"></span></h2><p data-hello-text></p><div class="suggest" data-suggest></div></div>
     </section>
     <section class="view" data-panel="tasks" hidden aria-label="Задания"><div class="wrap"><div class="grid" data-tasks></div></div></section>
     <section class="view" data-panel="files" hidden aria-label="Файлы"><div class="wrap"><div data-alert></div><div class="rows" data-files></div></div></section>
@@ -621,7 +665,7 @@ body[data-theme] .msg.note .ubub { background: none; }
           <div class="cmd"><code>Напарнику</code><p>Переключатель в поле ввода. Сообщение увидит только напарник, Claude его не читает.</p></div>
           <div class="cmd"><code>Оба Claude</code><p>Ваш Claude становится ведущим: делит задачу и передаёт часть Claude напарника. Тот делает её на своём компьютере в отдельной ветке и присылает отчёт, ведущий сливает ветки. Нужно, чтобы Cowork был открыт у обоих.</p></div>
           <div class="cmd"><code>Фото и файлы</code><p>Ctrl+V, перетаскивание или скрепка, до шести за раз, файл до 15 МБ. Claude их получает, архивы zip и tar Cowork распаковывает ему сам. Напарник видит и может скачать. На ntfy.sh вложения хранятся около трёх часов.</p></div>
-          <div class="cmd"><code>/sync</code><p>Если работаете в терминале: в начале сессии Claude подтянет изменения и расскажет, что сделал напарник.</p></div>
+          <div class="cmd"><code class="k">/sync</code><p>Если работаете в терминале: в начале сессии Claude подтянет изменения и расскажет, что сделал напарник.</p></div>
         </div>
         <h2 class="h2">Вопросы<span class="dot"></span></h2>
         <div class="faq">
@@ -671,25 +715,26 @@ body[data-theme] .msg.note .ubub { background: none; }
     <pre class="run-log" data-run-log hidden></pre>
     <div class="pane-who" data-pane-who></div>
     <div class="pane-arts" data-pane-arts></div>
-    <div class="pane-body"><iframe data-pane-frame title="Просмотр" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"></iframe>
+    <div class="pane-body"><div class="pane-gone" data-pane-gone hidden><b>Артефакт устарел</b><p>Сервер канала хранит вложения около трёх часов, этот уже удалён. Claude может сделать его заново.</p><button class="pane-pill" type="button" data-art-redo>Попросить Claude сделать снова</button></div><iframe data-pane-frame title="Просмотр" sandbox="allow-scripts allow-forms allow-popups allow-modals allow-downloads"></iframe>
       <div class="pane-empty" data-pane-empty><b>Просмотр</b><p>Здесь открываются артефакты, которые делает Claude, и ваше приложение. Впишите адрес или команду запуска выше.</p></div></div>
   </aside>
 </div>
 
 <dialog class="setup" data-setup aria-labelledby="setup-title">
   <form method="dialog" data-setup-form>
-    <h2 id="setup-title" data-setup-title>Hi<span class="dot"></span></h2>
+    <h2 id="setup-title" data-setup-title>Привет<span class="dot"></span></h2>
     <p class="lead" data-setup-lead>Выберите папку проекта: канал с напарником подставится из .claude/cowork.env сам.</p>
     <label>Ваше имя, так вас увидит напарник<input name="me" autocomplete="name" required></label>
     <div data-cc-setup hidden style="display:grid;gap:16px">
       <div class="folder"><label>Папка проекта, где работает Claude Code<input name="folder" readonly placeholder="Не выбрана"></label><button class="btn btn--ghost mini" type="button" data-pick-folder>Выбрать</button></div>
     </div>
     <label>Название проекта<input name="pname" autocomplete="off" placeholder="Например, Сайт"></label>
-    <label>Канал, COWORK_TOPIC<input name="topic" autocomplete="off" required></label>
+    <details class="adv" data-setup-adv><summary>Дополнительно: канал связи с напарником</summary><div>
+    <label>Канал (одинаковый у вас обоих, подставляется сам)<input name="topic" autocomplete="off" required></label>
     <div class="two">
       <label>Сервер<input name="server" autocomplete="off" value="https://ntfy.sh"></label>
       <label>Токен, если сервер свой<input name="token" type="password" autocomplete="off"></label>
-    </div>
+    </div></div></details>
     <div data-cc-setup2 hidden style="display:grid;gap:16px">
       <label>Что Claude может делать без вопросов<select name="perm"><option value="acceptEdits">Менять файлы (рекомендуется)</option><option value="bypassPermissions">Всё, включая команды</option><option value="plan">Ничего, только план</option></select></label>
       <div class="cc-state" data-cc-state>Проверяю Claude Code…</div>
@@ -737,7 +782,7 @@ body[data-theme] .msg.note .ubub { background: none; }
 <script>
 (() => {
   const WORK_MIN = 15, OFF_MIN = 45, FILE_WINDOW_MIN = 120, KEEP_EVENTS = 1500, TURN_GAP_MIN = 30;
-  const COLORS = ["#6c3cff", "#ff6b4a", "#12a87a", "#e09a00", "#3b82f6", "#d946b8"];
+  const COLORS = ["#6c3cff", "#cc4127", "#0e7d5c", "#a86800", "#2563eb", "#c0349e"];   // white initials stay readable (4.5:1+)
   const RELEASES = "https://github.com/melloskiess-spec/cowork-releases/releases/latest";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -891,6 +936,8 @@ body[data-theme] .msg.note .ubub { background: none; }
   const stateOf = (p, name) => {
     const now = Date.now(), seen = Math.max(p.seen || 0, p.last || 0);
     const online = name === me ? conn === "ok" : !p.bye && now - seen < 5 * 60e3;
+    // no channel: we can't know what the partner is doing right now, so say when we last heard
+    if (name !== me && conn !== "ok") return ["off", seen ? "нет связи · был(а) " + ago(seen) : "нет связи"];
     if (!p.ended && !p.idle && now - p.last < WORK_MIN * 60e3) return ["ok", "работает с Claude"];
     return online ? ["on", "в сети"] : ["off", seen ? "был(а) " + ago(seen) : "не в сети"];
   };
@@ -978,7 +1025,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     const ok = conn === "ok";
     $("[data-ldot]").className = "ldot " + (ok ? "ok" : conn === "wait" ? "wait" : "");
     $("[data-conn]").textContent = !proj ? "Нет проекта" : ok ? "В эфире" : conn === "wait" ? "Подключаюсь…" : "Не подключено";
-    $("[data-conn-sub]").textContent = proj ? `${me || "без имени"} · ${proj.name}` : "Нажмите на шестерёнку";
+    $("[data-conn-sub]").textContent = proj ? `${me || "без имени"} · ${proj.name}` : "Создайте проект в меню слева";
     $("[data-live]").className = "live" + (ok ? " ok" : "");
     $("[data-live-text]").textContent = ok ? "в эфире" : conn === "wait" ? "подключаюсь" : "офлайн";
   }
@@ -998,7 +1045,7 @@ body[data-theme] .msg.note .ubub { background: none; }
       const busy = runs.has(c.id) || !c.mine && !!activeRun(c.id);
       const st = busy ? "ok" : "off";
       html += `<div class="chat ${busy ? "busy" : ""} is-${st}" role="button" tabindex="0" data-chat="${esc(c.id)}" aria-current="${view === "chat" && c.id === chatId}" title="${esc(c.title)}${c.mine ? "" : " · чат " + esc(c.user)}">${av(c.user)}<span class="ct">${esc(c.title)}</span>`
-        + (c.mine && !busy ? `<span class="cm hide-on-hover">${short(c.last)}</span><span class="del" data-del-chat="${esc(c.id)}" title="Удалить чат" role="button">×</span>` : `<span class="cm">${busy ? "работает" : short(c.last)}</span>`) + "</div>";
+        + (c.mine && !busy ? `<span class="cm hide-on-hover">${short(c.last)}</span><span class="del" data-del-chat="${esc(c.id)}" title="Удалить чат" aria-label="Удалить чат" role="button" tabindex="0">×</span>` : `<span class="cm">${busy ? "работает" : short(c.last)}</span>`) + "</div>";
     }
     $("[data-chats]").innerHTML = html || '<div class="chat-group">Чаты проекта</div><div class="empty-side">Пока пусто. Нажмите «Новый чат» и напишите Claude задание.</div>';
     $$("[data-view]").forEach(b => b.dataset.view === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
@@ -1163,7 +1210,7 @@ body[data-theme] .msg.note .ubub { background: none; }
         flushSeg();
         const key = "h" + (e.cid || e.seq), fresh = !shown.has(key); shown.add(key);
         const lbl = `${claudeOf(e.user)} → ${claudeOf(e.to || "")}`.replace(/^в/, "В");
-        const waiting = !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди" : "ждёт компьютер " + esc(e.to || "") + ", там должен быть открыт Cowork"}</div>` : "";
+        const waiting = !taken.has(e.cid) ? `<div class="pending">${queuedAsks.has(e.cid) ? "в очереди" : (e.to === me ? "ждёт ваш компьютер: откройте Cowork" : "ждёт компьютер " + esc(e.to || "") + ", там должен быть открыт Cowork")}</div>` : "";
         out.push(`<div class="msg handoff ${fresh ? "fresh" : ""}"><div class="hbox"><div class="meta"><span class="aiic sm">${CLAUDE_LOGO}</span><b>${esc(lbl)}</b>${e.event === "report" ? "<i>отчёт</i>" : "<i>поручение</i>"}${hhmm(e.t)}</div>${md(e.full || e.text)}</div>${waiting}</div>`);
         continue;
       }
@@ -1224,7 +1271,7 @@ body[data-theme] .msg.note .ubub { background: none; }
     } else {
       $("[data-title]").innerHTML = VIEWS[view][0] + '<span class="dot"></span>';
       $("[data-subtitle]").textContent = VIEWS[view][1];
-      if (view === "feed") renderChat(events, null, "Hello", "Здесь появится работа вас обоих: чаты с Claude, правки файлов, коммиты и ваши сообщения друг другу.", false);
+      if (view === "feed") renderChat(events, null, "Пока тихо", "Здесь появится работа вас обоих: чаты с Claude, правки файлов, коммиты и ваши сообщения друг другу.", false);
     }
 
     const turnsAll = buildTurns(events);
@@ -1263,7 +1310,7 @@ body[data-theme] .msg.note .ubub { background: none; }
   // ---------- navigation ----------
   function show(v, id) {
     view = v;
-    if (v === "chat") chatId = id ?? chatId;
+    if (v === "chat") { chatId = id ?? chatId; const tg = chatId && store.get("cw.target." + chatId); if (tg) target = tg; }
     const panel = v === "chat" ? "feed" : v;
     $$("[data-panel]").forEach(p => { const on = p.dataset.panel === panel; const was = !p.hidden; p.hidden = !on; if (on && !was) { p.classList.remove("enter"); void p.offsetWidth; p.classList.add("enter"); } });
     $("[data-composer]").hidden = !(v === "chat" || v === "feed");
@@ -1429,13 +1476,15 @@ body[data-theme] .msg.note .ubub { background: none; }
     editing = asNew || !proj ? null : proj;
     const p = editing || { name: "", folder: "", topic: "", server: "https://ntfy.sh", token: "", perm: "acceptEdits" };
     form.me.value = me; form.pname.value = p.name; form.folder.value = p.folder; form.topic.value = p.topic; form.server.value = p.server; form.token.value = p.token; form.perm.value = p.perm;
-    $("[data-setup-title]").innerHTML = (editing ? "Проект" : projects.length ? "Новый проект" : "Hi") + '<span class="dot"></span>';
+    $("[data-setup-title]").innerHTML = (editing ? "Проект" : projects.length ? "Новый проект" : "Привет") + '<span class="dot"></span>';
+    { const adv = $("[data-setup-adv]"); if (adv) adv.open = !!editing && !p.topic; }
     $("[data-setup-title]").style.fontSize = editing || projects.length ? "56px" : "";
     $("[data-setup-ok]").lastChild.textContent = editing ? "Сохранить" : "Добавить проект";
     $("[data-setup-delete]").hidden = !editing || projects.length < 2;
     if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
-    (!me ? form.me : native?.claude && !p.folder ? $("[data-pick-folder]") : form.topic).focus();
+    (!me ? form.me : native?.claude && !p.folder ? $("[data-pick-folder]") : form.pname).focus();
   }
+  $("[data-setup-form]").addEventListener("invalid", () => { const adv = $("[data-setup-adv]"); if (adv) adv.open = true; }, true);
   $$("[data-open-setup]").forEach(b => b.addEventListener("click", () => openSetup(false)));
   $("[data-setup-close]").addEventListener("click", () => dialog.close());
   $("[data-setup-delete]").addEventListener("click", () => {
@@ -1492,6 +1541,8 @@ body[data-theme] .msg.note .ubub { background: none; }
     $('[data-target="team"]').title = mate ? `Ваш Claude и Claude ${mate} делят задачу: каждый делает свою часть на своём компьютере` : "";
     const run = inChat && chatId ? activeRun(chatId) : null;
     $$("[data-target]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.target === t)));
+    say.dataset.mode = t;
+    say.style.setProperty("--pc", mate ? colorOf(mate) : "#3b82f6");
     const cb = $('[data-target="claude"]');
     cb.title = partnerChat ? `Claude в этом чате работает на компьютере ${c.user}` : claudeOk ? "Задание вашему Claude Code" : !native?.claude ? "Доступно в приложении Cowork" : !ccOk ? "Claude Code не найден на этом компьютере" : "Выберите папку проекта в настройках";
     $(".target").hidden = !native?.claude && !partnerChat;
@@ -1500,14 +1551,15 @@ body[data-theme] .msg.note .ubub { background: none; }
     msg.placeholder = t === "team" ? "Задача для обоих Claude: ведущий разделит её на части…" : t === "claude" ? (run ? "Claude работает. Можно написать ещё, сообщение встанет в очередь…" : view === "feed" ? "Задание для Claude, откроется новый чат…" : "Написать Claude…") : "Написать напарнику, Claude не увидит…";
     const stop = t !== "partner" && !!run && !msg.value.trim() && !atts.length;
     sendBtn.classList.toggle("stop", stop);
-    sendBtn.innerHTML = stop ? STOP_ICON : SEND_ICON;
-    sendBtn.setAttribute("aria-label", stop ? "Остановить Claude" : "Отправить");
+    const toLabel = t === "partner" ? (mate || "Напарнику") : t === "team" ? "Обоим Claude" : partnerChat ? "Claude " + c.user : "Claude";
+    sendBtn.innerHTML = stop ? STOP_ICON : `<span class="to">${esc(toLabel)}</span>${SEND_ICON}`;
+    sendBtn.setAttribute("aria-label", stop ? "Остановить Claude" : "Отправить: " + toLabel);
     sendBtn.disabled = stop ? false : !msg.value.trim() && !atts.length;
     if (!hint.dataset.sticky) hint.textContent = t === "team" ? `Enter · ведущий Claude (${partnerChat ? c.user : "ваш"}) разделит задачу с Claude ${partnerChat ? "вашим" : mate}` : t === "claude" ? (partnerChat ? `Enter, отправить · выполнит компьютер ${c.user}, ответ увидите оба` : "Enter, отправить · напарник видит этот чат и может писать сюда же") : "Enter, отправить · это видит только напарник, не Claude";
   }
   $$("[data-target]").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.target !== "partner" && !canClaude() && !(view === "chat" && currentChat() && !currentChat().mine)) { if (native?.claude) openSetup(false); return; }
-    target = b.dataset.target; store.set("cw.target", target); renderComposer(); msg.focus();
+    target = b.dataset.target; store.set("cw.target", target); if (chatId) store.set("cw.target." + chatId, target); renderComposer(); msg.focus();
   }));
   function flash(text) { hint.dataset.sticky = "1"; hint.textContent = text; clearTimeout(flash.t); flash.t = setTimeout(() => { delete hint.dataset.sticky; renderComposer(); }, 6000); }
   // ---------- photos: paste, drop or pick; shrunk to 1600px before sending ----------
@@ -1858,7 +1910,7 @@ ${FENCE}
     if (!/^[a-z]+:\/\//i.test(u)) u = (/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(u) ? "http://" : "https://") + u;
     if (!/^https?:\/\//i.test(u)) return;
     if (!remote) shareView({ url: u });
-    paneArt = null; frame.removeAttribute("srcdoc"); delete frame.dataset.snap;
+    paneArt = null; frame.removeAttribute("srcdoc"); delete frame.dataset.snap; pane.classList.remove("art-mode"); $("[data-pane-gone]").hidden = true;
     frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads");
     frame.src = u; paneUrl.value = u; paneEmpty.hidden = true;
     if (push) paneHist.push({ u });
@@ -1878,6 +1930,7 @@ ${FENCE}
     const html = await artifactHtml(e);
     openPane(true);
     paneArt = cid; paneUrl.value = "артефакт: " + (e.n || ""); delete frame.dataset.snap;
+    pane.classList.add("art-mode"); $("[data-pane-gone]").hidden = !!html; $("[data-art-redo]").dataset.n = e.n || "";
     frame.removeAttribute("src");
     frame.setAttribute("sandbox", "allow-scripts allow-forms allow-popups allow-modals allow-downloads");
     frame.srcdoc = html || '<p style="font:15px system-ui;padding:24px;color:#777">Артефакт больше недоступен: на сервере канала вложения хранятся около трёх часов.</p>';
@@ -1946,6 +1999,16 @@ ${FENCE}
     renderRun();
   });
   try { if (localStorage.getItem("cw.pane")) setTimeout(() => openPane(true), 0); } catch {}
+  $("[data-art-redo]").addEventListener("click", ev => {
+    const n = ev.currentTarget.dataset.n || "артефакт";
+    msg.value = `Сделай артефакт ${n} заново: старая копия больше недоступна.`; target = "claude"; renderComposer(); grow(); msg.focus();
+  });
+  document.addEventListener("keydown", ev => {
+    if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+    if (ev.key === "n" || ev.key === "т") { ev.preventDefault(); $("[data-new-chat]").click(); }
+    else if (ev.key === "\\") { ev.preventDefault(); openPane(pane.hidden); }
+  });
+  document.addEventListener("keydown", ev => { const d = ev.target.closest?.("[data-del-chat]"); if (d && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); d.click(); } });
 
   // ---------- the "Cowork" tab: change the app itself ----------
   const selfDlg = $("[data-self-dialog]");
